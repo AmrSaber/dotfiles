@@ -13,8 +13,6 @@ alias dc="docker compose"
 alias nvimz="nvim ~/.zshrc && omz reload"
 alias nviml="nvim ~/.zsh_local && omz reload"
 
-alias update="sudo apt update && sudo apt upgrade -y && sudo snap refresh && brew update && brew upgrade && mise up"
-
 # Zellij
 alias z="zellij"
 alias zd='z a -c $DEVICE_NAME'
