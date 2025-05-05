@@ -1,6 +1,6 @@
 [custom0]
 binding='<Super>c'
-command='konsole'
+command='kitty'
 name='Start Terminal'
 
 [custom1]

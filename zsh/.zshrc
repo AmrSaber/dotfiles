@@ -40,11 +40,6 @@ plugins=(fzf zshmarks git golang node bun docker rust timer)
 TIMER_FORMAT='[%d]'
 TIMER_PRECISION=2
 
-# Load local config if present
-[ -f ~/.zsh_local ] && source ~/.zsh_local
-
-source $ZSH/oh-my-zsh.sh
-
 # === Completions ===
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
 eval "$(just --completions zsh)" # just
@@ -52,3 +47,9 @@ eval "$(just --completions zsh)" # just
 eval "$(mise activate zsh)" # mise
 eval "$(mise completion zsh)" # mise auto completion
 
+# === Final setup ===
+
+# Load local config if present
+[ -f ~/.zsh_local ] && source ~/.zsh_local
+
+source $ZSH/oh-my-zsh.sh
