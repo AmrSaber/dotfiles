@@ -1,0 +1,8 @@
+[user]
+	name = Amr Saber
+	email = amr.m.saber.mail@gmail.com
+[core]
+	pager = bat --plain
+[alias]
+	lol = log --oneline --graph --branches --tags
+	amend = commit --amend
