@@ -1,0 +1,14 @@
+[custom0]
+binding='<Super>c'
+command='konsole'
+name='Start Terminal'
+
+[custom1]
+binding='<Super>v'
+command='vivaldi'
+name='Vivaldi'
+
+[custom2]
+binding='<Super>e'
+command='nautilus'
+name='Files Explorer'
