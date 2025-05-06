@@ -41,7 +41,10 @@ TIMER_FORMAT='[%d]'
 TIMER_PRECISION=2
 
 # === Completions ===
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
+# Setup zsh auto completion
+autoload -Uz compinit && compinit
+
+[ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
 eval "$(just --completions zsh)" # just
 
 eval "$(mise activate zsh)" # mise
