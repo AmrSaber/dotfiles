@@ -45,8 +45,7 @@ update:
       exit 0
     fi
 
-    gum style --foreground 4 "Updating dotfiles..."
-    git pull
+    gum spin --spinner.foreground="4" --title 'Updating dotfiles...' --show-error git pull
     echo $today > {{last_updated_at_file}}
   fi
 
