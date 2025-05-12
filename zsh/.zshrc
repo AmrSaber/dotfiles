@@ -19,6 +19,7 @@ export EDITOR="nvim"
 # === Aliases ===
 alias sk="skate"
 alias dc="docker compose"
+alias cat="bat --plain"
 
 alias nvimz="nvim ~/.zshrc && omz reload"
 alias nviml="nvim ~/.zsh_local && omz reload"
