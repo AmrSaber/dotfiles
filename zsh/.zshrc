@@ -55,6 +55,9 @@ TIMER_PRECISION=2
 # Load local config if present
 [ -f ~/.zsh_local ] && source ~/.zsh_local
 
+# Update dotfiles if inside zellij and dotfiles directory exist
+(z ls 2> /dev/null | grep -q current) && [[ -d ~/.dotfiles ]] && (cd ~/.dotfiles; just update)
+
 # Enter Zellij by default, if not already inside
 z ls 2> /dev/null | grep -q current || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
 
