@@ -2,6 +2,16 @@
 export PATH="$PATH:$HOME/go/bin" # Go bin
 export PATH="$PATH:$HOME/.cargo/bin" # Cargo bin
 
+# === Packages Completions and Setup ===
+# Setup zsh auto completion
+autoload -Uz compinit && compinit
+
+[ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
+eval "$(just --completions zsh)" # just
+
+eval "$(mise activate zsh)" # mise
+eval "$(mise completion zsh)" # mise auto completion
+
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
 export EDITOR="nvim"
@@ -40,19 +50,12 @@ plugins=(fzf zshmarks git golang node bun docker rust timer)
 TIMER_FORMAT='[%d]'
 TIMER_PRECISION=2
 
-# === Completions ===
-# Setup zsh auto completion
-autoload -Uz compinit && compinit
-
-[ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
-eval "$(just --completions zsh)" # just
-
-eval "$(mise activate zsh)" # mise
-eval "$(mise completion zsh)" # mise auto completion
-
 # === Final setup ===
-
 # Load local config if present
 [ -f ~/.zsh_local ] && source ~/.zsh_local
 
+# Enter Zellij by default, if not already inside
+z ls 2> /dev/null | grep -q current || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
+
+# Source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
