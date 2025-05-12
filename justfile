@@ -3,6 +3,7 @@ dconf_dir := 'configs/dconf'
 shell_dump := dconf_dir / 'shell.toml'
 bindings_dump := dconf_dir / 'keybindings.toml'
 custom_bindings_dump := dconf_dir / 'custom-bindings.toml'
+last_updated_at_file := '.last-updated-at'
 
 # dconf paths
 dconf_shell := '/org/gnome/shell/'
@@ -31,6 +32,23 @@ commit:
   git add .
   git commit
   git push
+
+# Update dotfiles but only once a day
+update:
+  #!/bin/zsh
+  last_updated=$(cat {{last_updated_at_file}} 2> /dev/null)
+  today=$(date -uI)
+
+  if [[ -z $last_updated || $last_updated -lt $today ]]; then
+    if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
+      gum style --foreground 3 "dotfiles workspace is not clean, skipping update!"
+      exit 0
+    fi
+
+    gum style --foreground 4 "Updating dotfiles..."
+    git pull
+    echo $today > {{last_updated_at_file}}
+  fi
 
 # Edit justfile
 @edit:
