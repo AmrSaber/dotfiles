@@ -58,8 +58,8 @@ TIMER_PRECISION=2
 # Update dotfiles if inside zellij and dotfiles directory exist
 (z ls 2> /dev/null | grep -q current) && [[ -d ~/.dotfiles ]] && (cd ~/.dotfiles && just update)
 
-# Enter Zellij by default, if not already inside
-z ls 2> /dev/null | grep -q current || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
-
 # Source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
+
+# Enter Zellij by default, if not already inside
+z ls 2> /dev/null | grep -q current || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
