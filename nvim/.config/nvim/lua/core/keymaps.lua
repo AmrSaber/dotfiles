@@ -52,8 +52,9 @@ keymap.set("n", "<leader>er", ":NvimTreeFocus<CR>")    -- toggle focus to file e
 keymap.set("n", "<leader>ef", ":NvimTreeFindFile<CR>") -- find file in file explorer
 
 -- Telescope
-keymap.set('n', '<leader>ff', require('telescope.builtin').git_files, {})                 -- fuzzy find files in project
-keymap.set('n', '<leader>fg', require('telescope.builtin').live_grep, {})                 -- grep file contents in project
+keymap.set('n', '<leader>ff', require('telescope.builtin').find_files, {})                -- fuzzy find files in project
+keymap.set('n', '<leader>fg', require('telescope.builtin').git_files, {})                 -- fuzzy find files in project, ignoring what's in .gitignore
+keymap.set('n', '<leader>fw', require('telescope.builtin').live_grep, {})                 -- grep file contents in project
 keymap.set('n', '<leader>fb', require('telescope.builtin').buffers, {})                   -- fuzzy find open buffers
 keymap.set('n', '<leader>fh', require('telescope.builtin').help_tags, {})                 -- fuzzy find help tags
 keymap.set('n', '<leader>fs', require('telescope.builtin').current_buffer_fuzzy_find, {}) -- fuzzy find in current file buffer
