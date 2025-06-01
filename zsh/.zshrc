@@ -27,6 +27,7 @@ alias nviml="nvim ~/.zsh_local && omz reload"
 # Zellij
 alias z="zellij"
 alias zd='z a -c $DEVICE_NAME'
+alias zv='z a -c "$DEVICE_NAME-editor"'
 
 # Bookmarks
 alias j="jump"
@@ -39,6 +40,12 @@ alias python="python3"
 alias pip="pip3"
 
 alias dotenv='export $(cat .evn | xargs)'
+
+# === Functions ===
+# Start zellig main session if no other session is started
+start_main_session() {
+  z ls &> /dev/null || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
+}
 
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
