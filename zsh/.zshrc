@@ -21,8 +21,7 @@ alias sk="skate"
 alias dc="docker compose"
 alias cat="bat --plain"
 
-alias nvimz="nvim ~/.zshrc && omz reload"
-alias nviml="nvim ~/.zsh_local && omz reload"
+alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 
 # Zellij
 alias z="zellij"
