@@ -46,6 +46,10 @@ start_main_session() {
   z ls &> /dev/null || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
 }
 
+device() {
+  echo $DEVICE_NAME
+}
+
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
