@@ -56,10 +56,15 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="af-magic"
 
-plugins=(fzf zshmarks git golang node bun docker rust timer) 
+plugins=(fzf zshmarks git golang node bun docker rust timer python) 
 
+# Timer configs
 TIMER_FORMAT='[%d]'
 TIMER_PRECISION=2
+
+# Python configs
+PYTHON_AUTO_VRUN=true
+PYTHON_VENV_NAME=".venv"
 
 # === Final setup ===
 # Load local config if present
