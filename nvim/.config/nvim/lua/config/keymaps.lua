@@ -9,3 +9,10 @@ keymap.set("n", "<leader>qw", ":wq<CR>", { desc = "Save and quit" })
 keymap.set("n", "<leader>qq", ":q!<CR>", { desc = "Discard and quit" })
 keymap.set("n", "<leader>ww", ":w<CR>", { desc = "Save" })
 keymap.set("n", "<leader>wq", ":wq<CR>", { desc = "Save and quit" })
+
+-- Goto Import
+vim.keymap.set('n', 'gi', function()
+  local word = vim.fn.expand('<cword>')
+  vim.cmd('silent! /\\<' .. word .. '\\>')
+end, { desc = 'Go to import statement' })
+
