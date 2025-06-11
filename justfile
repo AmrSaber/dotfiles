@@ -33,6 +33,13 @@ commit:
   git commit
   git push
 
+# Commit nvim lock-file changes
+commit-lock-file:
+  git reset
+  git add ./nvim/.config/nvim/lazy-lock.json
+  git commit -m 'nvim: update lock-file'
+  git push
+
 # Update dotfiles but only once a day
 update:
   #!/bin/zsh
