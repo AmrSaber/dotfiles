@@ -6,3 +6,4 @@
 [alias]
 	lol = log --oneline --graph --branches --tags
 	amend = commit --amend
+  summary = show --summary
