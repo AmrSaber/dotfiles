@@ -39,6 +39,7 @@ alias python="python3"
 alias pip="pip3"
 
 alias dotenv='export $(cat .evn | xargs)'
+alias scripts='jq ".scripts" package.json'
 
 # === Functions ===
 # Start zellig main session if no other session is started
