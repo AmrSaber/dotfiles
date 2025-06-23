@@ -6,11 +6,15 @@ export PATH="$PATH:$HOME/.cargo/bin" # Cargo bin
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
 
+# Activation
 [ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
-eval "$(just --completions zsh)" # just
-
 eval "$(mise activate zsh)" # mise
+
+# Auto completion
+eval "$(just --completions zsh)" # just
 eval "$(mise completion zsh)" # mise auto completion
+eval "$(gum completion zsh)" # gum
+eval "$(skate completion zsh)" # skate
 
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
