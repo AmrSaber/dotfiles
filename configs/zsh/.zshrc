@@ -71,8 +71,5 @@ PYTHON_VENV_NAME=".venv"
 # Load local config if present
 [ -f ~/.zsh_local ] && source ~/.zsh_local
 
-# Update dotfiles if inside zellij and dotfiles directory exist
-(z ls 2> /dev/null | grep -q current) && [[ -d ~/.dotfiles ]] && (cd ~/.dotfiles && just update)
-
 # Source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
