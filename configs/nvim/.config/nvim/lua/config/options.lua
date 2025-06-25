@@ -18,3 +18,6 @@ if os.getenv("SSH_CLIENT") or os.getenv("SSH_TTY") then
 end
 
 vim.opt.colorcolumn = "121"
+
+-- Do not conceal syntax
+vim.opt.conceallevel = 0
