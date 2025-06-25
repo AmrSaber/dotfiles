@@ -20,6 +20,9 @@ eval "$(skate completion zsh)" # skate
 export DEVICE_NAME="$(hostname)"
 export EDITOR="nvim"
 
+# Get servers to work with kitty
+if [ -n "$SSH_CLIENT" ] && [ "$TERM" = "xterm-kitty" ]; then export TERM="xterm-256color"; fi
+
 # === Aliases ===
 alias sk="skate"
 alias dc="docker compose"
