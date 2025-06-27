@@ -16,3 +16,9 @@ vim.keymap.set('n', 'gi', function()
   vim.cmd('silent! /\\<' .. word .. '\\>')
 end, { desc = 'Go to import statement' })
 
+-- Marks
+local wk = require("which-key")
+wk.add({{ "<leader>m", group = "Marks", desc="Manage marks" }})
+vim.keymap.set("n", "<leader>md", ":delm", { desc = "Delete mark" })
+vim.keymap.set("n", "<leader>mD", ":delm! | delm A-Z0-9<CR>:wshada!<CR>", { desc = "Delete all marks" })
+
