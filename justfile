@@ -40,7 +40,7 @@ commit:
 # Commit nvim lock-file changes
 commit-lock-file:
   git reset
-  git add ./nvim/.config/nvim/lazy-lock.json
+  git add ./configs/nvim/.config/nvim/lazy-lock.json
   git commit -m 'nvim: update lock-file'
   git push
 
