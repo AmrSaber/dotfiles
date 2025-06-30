@@ -20,16 +20,34 @@ dump-config:
   dconf dump {{dconf_bindings}} > {{bindings_dump}}
   dconf dump {{dconf_custom_bindings}} > {{custom_bindings_dump}}
 
-# Stows given packages, defaults to all
-[working-directory: './configs']
-stow +dirs='*':
-  stow -t ~ -R {{dirs}}
-
 # Loads dconf configs
 load-config:
   dconf load {{dconf_shell}} < {{shell_dump}}
   dconf load {{dconf_bindings}} < {{bindings_dump}}
   dconf load {{dconf_custom_bindings}} < {{custom_bindings_dump}}
+
+# Stows given packages. If none provided, interactive select is used.
+[working-directory: './configs']
+stow *apps:
+  #!/usr/bin/bash
+ 
+  apps={{apps}}
+
+  # If no apps provided, choose which ones to stow
+  [ -z "$apps" ] && apps=$(gum choose --no-limit $(ls))
+
+  # Stow provided/selected apps
+  if [ -n "$apps" ]; then
+    echo "Stowing [$(echo $apps | tr '\n' ' ' | sed 's/ *$//')]"
+    stow -t ~ -R $apps
+  else
+    gum style --foreground=03 "Nothing provided to stow!"
+  fi
+
+# List existing configs
+list-configs:
+  @ls ./configs
+alias ls := list-configs
 
 # Add all, commit, and push
 commit:
