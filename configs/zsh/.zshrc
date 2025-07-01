@@ -50,7 +50,7 @@ alias scripts='jq ".scripts" package.json'
 
 # === Functions ===
 # Start zellig main session if no other session is started
-start_main_session() {
+main_session() {
   z ls &> /dev/null || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
 }
 
