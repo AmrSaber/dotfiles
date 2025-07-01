@@ -22,3 +22,11 @@ wk.add({{ "<leader>m", group = "Marks", desc="Manage marks" }})
 vim.keymap.set("n", "<leader>md", ":delm", { desc = "Delete mark" })
 vim.keymap.set("n", "<leader>mD", ":delm! | delm A-Z0-9<CR>:wshada!<CR>", { desc = "Delete all marks" })
 
+-- Deletions do not copy - Only "d" and "D" copy
+vim.keymap.set('n', 'x', '"_x')
+vim.keymap.set('n', 'X', '"_X')
+vim.keymap.set('v', 'x', '"_x')
+vim.keymap.set('n', 'c', '"_c')
+vim.keymap.set('n', 'C', '"_C')
+vim.keymap.set('v', 'c', '"_c')
+vim.keymap.set('v', 'p', '"_dP')
