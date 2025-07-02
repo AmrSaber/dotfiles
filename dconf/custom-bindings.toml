@@ -5,7 +5,7 @@ name='Start Terminal'
 
 [custom1]
 binding='<Super>v'
-command='vivaldi'
+command='vivaldi.vivaldi-stable'
 name='Vivaldi'
 
 [custom2]

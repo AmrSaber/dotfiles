@@ -1,7 +1,7 @@
 [/]
 disabled-extensions=@as []
 enabled-extensions=['ding@rastersoft.com', 'ubuntu-dock@ubuntu.com', 'space-bar@luchrioh', 'just-perfection-desktop@just-perfection', 'tactile@lundal.io', 'switcher@landau.fi', 'tophat@fflewddur.github.io', 'tiling-assistant@ubuntu.com']
-favorite-apps=['vivaldi-stable.desktop', 'kitty.desktop']
+favorite-apps=['vivaldi_vivaldi-stable.desktop', 'kitty.desktop']
 last-selected-power-profile='power-saver'
 welcome-dialog-last-shown-version='46.0'
 
@@ -57,7 +57,7 @@ version=33
 [extensions/switcher]
 font-size=uint32 24
 icon-size=uint32 24
-launcher-stats='{"gnome-keyboard-panel.desktop":3,"org.gnome.Settings.desktop":1,"kitty.desktop":4,"Alacritty.desktop":1}'
+launcher-stats='{"gnome-keyboard-panel.desktop":3,"org.gnome.Settings.desktop":1,"kitty.desktop":4,"Alacritty.desktop":1,"gnome-display-panel.desktop":1}'
 max-width-percentage=uint32 70
 show-switcher=['<Super>r']
 
