@@ -47,6 +47,7 @@ alias pip="pip3"
 
 alias dotenv='export $(cat .evn | xargs)'
 alias scripts='jq ".scripts" package.json'
+alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
 
 # === Functions ===
 # Start zellig main session if no other session is started
