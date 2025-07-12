@@ -38,7 +38,7 @@ if [ -z "$SSH_CLIENT" ]; then
   which nala &>/dev/null && sudo nala install -y kitty
 
   # Install browsers
-  if which snap &>/dev/null; then
+  if which snap &>/dev/null && gum confirm 'Install browsers?'; then
     which nala &>/dev/null && sudo nala remove firefox
     sudo snap install vivaldi firefox chromium
   fi
