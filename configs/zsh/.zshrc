@@ -75,5 +75,8 @@ TIMER_PRECISION=2
 # Load local config if present
 [ -f ~/.zsh_local ] && source ~/.zsh_local
 
+# Increase open files limit for brew updates
+ulimit -n 4096
+
 # Source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
