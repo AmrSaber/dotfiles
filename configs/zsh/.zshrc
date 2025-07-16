@@ -27,6 +27,7 @@ if [ -n "$SSH_CLIENT" ] && [ "$TERM" = "xterm-kitty" ]; then export TERM="xterm-
 alias sk="skate"
 alias dc="docker compose"
 alias cat="bat --plain"
+alias v="nvim"
 
 alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 
