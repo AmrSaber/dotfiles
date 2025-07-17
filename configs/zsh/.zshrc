@@ -49,9 +49,17 @@ alias scripts='jq ".scripts" package.json'
 alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
 
 # === Functions ===
-# Start zellig main session if no other session is started
+# Start zellij session if not already inside one
 zd() {
-  z a -c "$DEVICE_NAME"; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)"
+  # Set quiet variable if '-q' flag is sent
+  echo "$@" | grep -Eq '\-.*q' && local quiet=1
+
+  local list=$(z ls 2> /dev/null)
+  if [ -z "$list" ] || echo $list | grep -ivq 'current'; then
+    z a -c "$DEVICE_NAME"; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)"
+  elif [ -z "$quiet" ]; then
+    echo $(gum style --foreground 03 "Already inside zellij!") > /dev/stderr
+  fi
 }
 
 device() {
