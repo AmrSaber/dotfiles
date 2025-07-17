@@ -33,8 +33,6 @@ alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 
 # Zellij
 alias z="zellij"
-alias zd='z a -c $DEVICE_NAME'
-alias zv='z a -c "$DEVICE_NAME-editor"'
 
 # Bookmarks
 alias j="jump"
@@ -52,8 +50,8 @@ alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
 
 # === Functions ===
 # Start zellig main session if no other session is started
-main_session() {
-  z ls &> /dev/null || { zd; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)" }
+zd() {
+  z a -c "$DEVICE_NAME"; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)"
 }
 
 device() {
