@@ -28,6 +28,7 @@ alias sk="skate"
 alias dc="docker compose"
 alias cat="bat --plain"
 alias v="nvim"
+alias j="just"
 
 alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 
@@ -35,10 +36,10 @@ alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 alias z="zellij"
 
 # Bookmarks
-alias j="jump"
-alias bm="bookmark"
-alias dm="deletemark"
-alias sm="showmarks"
+alias jd="jump"       # Jump directory
+alias bm="bookmark"   # Bookmark directory
+alias dm="deletemark" # Delete mark
+alias sm="showmarks"  # Show marks
 
 # Python
 alias python="python3"
