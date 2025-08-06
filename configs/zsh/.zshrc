@@ -93,5 +93,5 @@ source $ZSH/oh-my-zsh.sh
 alias ls="eza --icons=always --group-directories-first"
 alias la="ls -a"
 alias ll="ls -alh --git"
-alias lt="ls --tree"
-alias lat="la --tree"
+alias lt="ls --tree -lh --git"
+alias llt="ll --tree"
