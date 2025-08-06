@@ -88,3 +88,10 @@ ulimit -n 4096
 
 # Source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
+
+# Needs to be here lest it is overridden by oh-my-zsh
+alias ls="eza --icons=always --group-directories-first"
+alias la="ls -a"
+alias ll="ls -alh --git"
+alias lt="ls --tree"
+alias lat="la --tree"
