@@ -49,6 +49,10 @@ list-configs:
   @ls ./configs
 alias ls := list-configs
 
+# Pull origin main
+pull:
+  git pull origin main
+
 # Add all, commit, and push
 commit:
   git add .
