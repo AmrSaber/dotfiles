@@ -92,6 +92,6 @@ source $ZSH/oh-my-zsh.sh
 # Needs to be here lest it is overridden by oh-my-zsh
 alias ls="eza --icons=always --group-directories-first"
 alias la="ls -a"
-alias ll="ls -alh --git"
-alias lt="ls --tree -lh --git"
-alias llt="ll --tree"
+alias ll="la -lh --git"
+alias l="ll --git-ignore"
+alias lt="l --tree"
