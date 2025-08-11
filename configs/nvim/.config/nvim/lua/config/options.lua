@@ -21,3 +21,6 @@ vim.opt.colorcolumn = "121"
 
 -- Do not conceal syntax
 vim.opt.conceallevel = 0
+
+-- Disable trouble lualine. No need for noisy components in lualine
+vim.g.trouble_lualine = false
