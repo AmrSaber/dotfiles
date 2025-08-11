@@ -23,9 +23,10 @@ which brew &>/dev/null || eval "$(curl -fsSL https://raw.githubusercontent.com/H
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # Install needed brew packages
-brew install neovim just mise zellij stow gum skate fzf bat jq yazi eza tlrc # Tools
-brew install font-ubuntu-mono-nerd-font                                      # Nerd font
-brew install go rust gleam                                                   # Programming languages
+brew install neovim just mise zellij stow gum skate fzf bat jq ripgrep yazi eza tlrc # Tools
+brew install ffmpeg sevenzip poppler fd zoxide resvg imagemagick                     # Yazi tool-kit to provide previews
+brew install font-ubuntu-mono-nerd-font                                              # Nerd font
+brew install go rust gleam                                                           # Programming languages
 
 # Activate mise
 eval "$(mise activate zsh)"
