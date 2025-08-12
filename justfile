@@ -9,6 +9,8 @@ dconf_shell := '/org/gnome/shell/'
 dconf_bindings := '/org/gnome/desktop/wm/keybindings/'
 dconf_custom_bindings := '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/'
 
+set fallback
+
 [private]
 @default:
   just --list --unsorted
