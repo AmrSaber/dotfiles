@@ -21,7 +21,7 @@ brew install neovim just mise zellij stow gum skate jq # Core tools
 brew install bat fd ripgrep eza zoxide                 # Modern alternatives
 brew install tlrc fzf yazi                             # Quality of life
 brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
-brew install font-ubuntu-mono-nerd-font                # Nerd font
+brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
 brew install go rust elixir                            # Programming languages
 
 # Activate mise
