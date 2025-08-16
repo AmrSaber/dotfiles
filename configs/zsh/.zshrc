@@ -92,4 +92,3 @@ alias l="ll --git-ignore"
 alias lt="l --tree"
 
 alias cd="z"
-alias cdi="zi"
