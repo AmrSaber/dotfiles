@@ -2,8 +2,8 @@
 
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
-  sudo apt update
-  sudo apt install nala -y
+  # Install nala if it does not exist
+  which nala 2>/dev/null || sudo apt update && sudo apt install nala -y
 
   # System update using nala, and install essential packages
   sudo nala upgrade -y
