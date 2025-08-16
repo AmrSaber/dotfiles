@@ -1,15 +1,9 @@
 #!/usr/bin/bash
 
-# Only run on servers
-if [ -n "$SSH_CLIENT" ]; then
-  # Get servers to work with kitty
-  [ "$TERM" = "xterm-kitty" ] && export TERM="xterm-256color"
-fi
-
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
   sudo apt update
-  sudo apt install nala
+  sudo apt install nala -y
 
   # System update using nala, and install essential packages
   sudo nala upgrade -y
@@ -23,16 +17,20 @@ which brew &>/dev/null || eval "$(curl -fsSL https://raw.githubusercontent.com/H
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # Install needed brew packages
-brew install neovim just mise zellij stow gum skate fzf bat jq ripgrep yazi eza tlrc # Tools
-brew install ffmpeg sevenzip poppler fd zoxide resvg imagemagick                     # Yazi tool-kit to provide previews
-brew install font-ubuntu-mono-nerd-font                                              # Nerd font
-brew install go rust gleam                                                           # Programming languages
+brew install neovim just mise zellij stow gum skate jq # Core tools
+brew install bat fd ripgrep eza zoxide                 # Modern alternatives
+brew install tlrc fzf yazi                             # Quality of life
+brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
+brew install font-ubuntu-mono-nerd-font                # Nerd font
+brew install go rust elixir                            # Programming languages
 
 # Activate mise
 eval "$(mise activate zsh)"
 
 # More programming languages
 mise use -g bun node@lts
+
+# TODO: install oh-my-zsh
 
 # If not in SSH connection
 if [ -z "$SSH_CLIENT" ]; then

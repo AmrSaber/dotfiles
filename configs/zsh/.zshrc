@@ -15,6 +15,7 @@ eval "$(just --completions zsh)" # just
 eval "$(mise completion zsh)" # mise auto completion
 eval "$(gum completion zsh)" # gum
 eval "$(skate completion zsh)" # skate
+eval "$(zoxide init zsh)" # zoxide
 
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
@@ -28,9 +29,6 @@ alias v="nvim"
 alias j="just"
 
 alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
-
-# Zellij
-alias z="zellij"
 
 # Bookmarks
 alias jd="jump"       # Jump directory
@@ -52,9 +50,9 @@ zd() {
   # Set quiet variable if '-q' flag is sent
   echo "$@" | grep -Eq '\-.*q' && local quiet=1
 
-  local list=$(z ls 2> /dev/null)
+  local list=$(zellij ls 2> /dev/null)
   if [ -z "$list" ] || echo $list | grep -ivq 'current'; then
-    z a -c "$DEVICE_NAME"; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)"
+    zellij a -c "$DEVICE_NAME"; echo "You are in $(gum style --bold --underline --foreground 032 $DEVICE_NAME)"
   elif [ -z "$quiet" ]; then
     echo $(gum style --foreground 03 "Already inside zellij!") > /dev/stderr
   fi
@@ -92,3 +90,6 @@ alias la="ls -a"
 alias ll="la -lh --git"
 alias l="ll --git-ignore"
 alias lt="l --tree"
+
+alias cd="z"
+alias cdi="zi"
