@@ -31,10 +31,10 @@ eval "$(mise activate zsh)"
 mise use -g bun node@lts
 
 # Install oh-my-zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+[[ ! -d ~/.oh-my-zsh ]] && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Install zshmarks
-git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins
+[[ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]] && git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins
 
 # If not in SSH connection
 if [ -z "$SSH_CLIENT" ]; then
