@@ -85,10 +85,12 @@ ulimit -n 4096
 source $ZSH/oh-my-zsh.sh
 
 # Needs to be here lest it is overridden by oh-my-zsh
-alias ls="eza --icons=always --group-directories-first"
-alias la="ls -a"
-alias ll="la -lh --git"
-alias l="ll --git-ignore"
-alias lt="l --tree"
+if which eza &>/dev/null; then
+  alias ls="eza --icons=always --group-directories-first"
+  alias la="ls -a"
+  alias ll="la -lh --git"
+  alias l="ll --git-ignore"
+  alias lt="l --tree"
+fi
 
-alias cd="z"
+which zoxide &> /dev/null && alias cd="z"
