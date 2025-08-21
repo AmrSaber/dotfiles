@@ -62,6 +62,19 @@ device() {
   echo $DEVICE_NAME
 }
 
+wait-for() {
+  local task=$1
+
+  if ! pgrep $task > /dev/null; then
+    gum style --foreground 3 "Task '$task' is not running"
+    return
+  fi
+
+  while pgrep $task > /dev/null; do
+    sleep 1s;
+  done
+}
+
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
