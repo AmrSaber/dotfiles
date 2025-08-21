@@ -165,6 +165,7 @@ keybinds clear-defaults=true {
         bind "Alt r" { NewPane "right"; }
         bind "Alt d" { NewPane "down"; }
         bind "Alt s" { NewPane "stacked"; }
+        bind "Alt t" { NewTab; }
         bind "Alt o" { MoveTab "right"; }
         bind "Alt p" { TogglePaneInGroup; }
         bind "Alt Shift p" { ToggleGroupMarking; }
