@@ -8,11 +8,11 @@ autoload -Uz compinit && compinit
 
 # Activation
 [ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
-eval "$(mise activate zsh)" # mise
+which mise &> /dev/null && eval "$(mise activate zsh)" # mise
 
 # Auto completion
 eval "$(just --completions zsh)" # just
-eval "$(mise completion zsh)" # mise auto completion
+which mise &> /dev/null && eval "$(mise completion zsh)" # mise auto completion
 eval "$(gum completion zsh)" # gum
 eval "$(skate completion zsh)" # skate
 eval "$(zoxide init zsh)" # zoxide
