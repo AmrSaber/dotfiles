@@ -104,6 +104,7 @@ if which eza &>/dev/null; then
   alias ll="la -lh --git"
   alias l="ll --git-ignore"
   alias lt="l --tree"
+  alias llt="ll --tree"
 fi
 
 which zoxide &> /dev/null && alias cd="z"
