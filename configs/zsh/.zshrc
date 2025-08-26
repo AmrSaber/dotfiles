@@ -67,7 +67,7 @@ wait-for() {
 
   if ! pgrep $task > /dev/null; then
     gum style --foreground 3 "Task '$task' is not running"
-    return
+    return 1
   fi
 
   while pgrep $task > /dev/null; do
