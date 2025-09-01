@@ -21,5 +21,4 @@ RUN HEADLESS=1 ./init.sh
 
 WORKDIR /home/user
 
-# Just stale
-CMD ["tail", "-f", "/dev/null"]
+CMD ["zsh"]

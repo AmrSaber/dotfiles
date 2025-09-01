@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set +u # Allow unbound variables
-
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
   # Install nala if it does not exist
@@ -13,7 +11,7 @@ if which apt &>/dev/null; then
 fi
 
 # Install brew if not installed
-which brew &>/dev/null || eval "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+which brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Activate brew
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

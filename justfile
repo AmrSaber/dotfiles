@@ -47,8 +47,9 @@ stow *apps:
   fi
 
 # Stows all configs
-stow-all:
-  just stow $(ls config)
+[working-directory: './configs']
+@stow-all:
+  stow -t ~ -R $(ls)
 
 # List existing configs
 list-configs:
