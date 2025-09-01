@@ -24,8 +24,9 @@ brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provid
 brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
 brew install go python                                 # Programming languages
 
-# Activate mise
-eval "$(mise activate zsh)"
+# Activate mise based on current shell
+local current_shell=$(basename $(echo $0))
+eval "$(mise activate $current_shell)"
 
 # More programming languages
 mise use -g bun node@lts
