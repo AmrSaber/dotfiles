@@ -22,7 +22,7 @@ brew install bat fd ripgrep eza zoxide                 # Modern alternatives
 brew install tlrc fzf yazi                             # Quality of life
 brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
-brew install go rust elixir                            # Programming languages
+brew install go python                                 # Programming languages
 
 # Activate mise
 eval "$(mise activate zsh)"
@@ -36,9 +36,13 @@ mise use -g bun node@lts
 # Install zshmarks
 [[ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]] && git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins
 
-# If not in SSH connection
-if [ -z "$SSH_CLIENT" ]; then
-  # Install kitty if on depian based system
+# Stow all the configurations
+rm ~/.zshrc
+just stow-all
+
+# If not in SSH connection nor in headless mode
+if [ -z "$SSH_CLIENT" ] && [ -z "$HEADLESS" ]; then
+  # Install kitty if on Debian based system
   which nala &>/dev/null && sudo nala install -y kitty
 
   # Install browsers

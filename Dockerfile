@@ -1,0 +1,20 @@
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y sudo
+
+# Setup user "user"
+RUN useradd -m -s /bin/bash user && \
+  usermod -aG sudo user && \
+  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+  rm -rf /var/lib/apt/lists/*
+
+USER user
+WORKDIR /home/user/.dotfiles
+
+COPY . .
+RUN HEADLESS=1 ./init.sh
+
+WORKDIR /home/user
+
+# Just stale
+CMD ["tail", "-f", "/dev/null"]

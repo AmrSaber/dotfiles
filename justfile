@@ -46,6 +46,10 @@ stow *apps:
     gum style --foreground=03 "Nothing provided to stow!"
   fi
 
+# Stows all configs
+stow-all:
+  just stow $(ls config)
+
 # List existing configs
 list-configs:
   @ls ./configs
