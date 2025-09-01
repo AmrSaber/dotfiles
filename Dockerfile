@@ -11,7 +11,7 @@ RUN useradd -m -s /bin/bash user && \
 USER user
 WORKDIR /home/user/.dotfiles
 
-COPY . .
+COPY --chown=user:user . .
 
 # Make sure init.sh has no syntax errors
 RUN bash -n ./init.sh
