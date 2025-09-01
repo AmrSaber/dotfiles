@@ -48,7 +48,7 @@ rm ~/.zshrc
 just stow-all
 
 # If not in SSH connection nor in headless mode
-if [ -z "$SSH_CLIENT" ] && [ -z "$HEADLESS" ]; then
+if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
   # Install kitty if on Debian based system
   which nala &>/dev/null && sudo nala install -y kitty
 
