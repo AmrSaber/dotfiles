@@ -12,6 +12,11 @@ USER user
 WORKDIR /home/user/.dotfiles
 
 COPY . .
+
+# Make sure init.sh has no syntax errors
+RUN bash -n ./init.sh
+
+# Run init.sh in headless mode
 RUN HEADLESS=1 ./init.sh
 
 WORKDIR /home/user

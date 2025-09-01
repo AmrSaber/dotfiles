@@ -1,4 +1,6 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
+
+set +u # Allow unbound variables
 
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
@@ -25,17 +27,21 @@ brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
 brew install go python                                 # Programming languages
 
 # Activate mise based on current shell
-local current_shell=$(basename $(echo $0))
+current_shell=$(basename $(echo $0))
 eval "$(mise activate $current_shell)"
 
 # More programming languages
 mise use -g bun node@lts
 
-# Install oh-my-zsh
-[[ ! -d ~/.oh-my-zsh ]] && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Install oh-my-zsh if not installed
+if [ ! -d ~/.oh-my-zsh ]; then
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
 
 # Install zshmarks
-[[ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]] && git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins
+if [ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]; then
+  git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins/zshmarks
+fi
 
 # Stow all the configurations
 rm ~/.zshrc
