@@ -22,7 +22,7 @@ brew install bat fd ripgrep eza zoxide                 # Modern alternatives
 brew install tlrc fzf yazi                             # Quality of life
 brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
-brew install go python                                 # Programming languages
+brew install go python rust                            # Programming languages
 
 # Activate mise based on current shell
 current_shell=$(basename $(echo $0))
