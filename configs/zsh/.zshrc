@@ -39,6 +39,9 @@ alias sm="showmarks"  # Show marks
 # Python
 alias python="python3"
 alias pip="pip3"
+alias p-env="python -m venv .venv"
+alias p-activate="source .venv/bin/activate"
+alias p-deactivate="deactivate"
 
 alias dotenv='export $(cat .evn | xargs)'
 alias scripts='jq ".scripts" package.json'
