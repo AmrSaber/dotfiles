@@ -15,7 +15,6 @@ eval "$(just --completions zsh)" # just
 which mise &> /dev/null && eval "$(mise completion zsh)" # mise auto completion
 eval "$(gum completion zsh)" # gum
 eval "$(skate completion zsh)" # skate
-eval "$(zoxide init zsh)" # zoxide
 
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
@@ -110,4 +109,3 @@ if which eza &>/dev/null; then
   alias llt="ll --tree"
 fi
 
-which zoxide &> /dev/null && alias cd="z"

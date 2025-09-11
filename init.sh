@@ -18,7 +18,7 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # Install needed brew packages
 brew install neovim just mise zellij stow gum skate jq # Core tools
-brew install bat fd ripgrep eza zoxide                 # Modern alternatives
+brew install bat fd ripgrep eza                        # Modern alternatives
 brew install tlrc fzf yazi                             # Quality of life
 brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
