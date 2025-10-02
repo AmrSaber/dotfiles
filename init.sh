@@ -20,6 +20,7 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 brew install neovim just mise zellij stow gum skate jq # Core tools
 brew install bat fd ripgrep eza                        # Modern alternatives
 brew install tlrc fzf yazi                             # Quality of life
+brew install neofetch fastfetch btop                   # Extras
 brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
 brew install go python rust                            # Programming languages
@@ -44,6 +45,8 @@ fi
 # Stow all the configurations
 rm ~/.zshrc
 just stow-all
+
+cp ./themes/zsh/* ~/.oh-my-zsh/themes/
 
 # If not in SSH connection nor in headless mode
 if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then

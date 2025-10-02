@@ -41,15 +41,19 @@ stow *apps:
   # Stow provided/selected apps
   if [ -n "$apps" ]; then
     echo "Stowing [$(echo $apps | tr '\n' ' ' | sed 's/ *$//')]"
-    stow -t ~ -R $apps
+    stow -t "$HOME" -R $apps
   else
     gum style --foreground=03 "Nothing provided to stow!"
   fi
 
 # Stows all configs
 [working-directory: './configs']
-@stow-all:
-  stow -t ~ -R $(ls)
+stow-all:
+  #!/usr/bin/bash
+
+  for app in *; do
+    stow -t "$HOME" -R "$app" 2> /dev/null || echo "Could not stow $app" && echo "Stowed $app"
+  done
 
 # List existing configs
 list-configs:
