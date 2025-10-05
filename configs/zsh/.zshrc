@@ -77,6 +77,10 @@ wait-for() {
   done
 }
 
+only() {
+  $@ && exit
+}
+
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
