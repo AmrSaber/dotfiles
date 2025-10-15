@@ -81,6 +81,10 @@ only() {
   $@ && exit
 }
 
+silent() {
+  $@ &>/dev/null
+}
+
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
