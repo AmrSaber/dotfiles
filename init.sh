@@ -7,7 +7,7 @@ if which apt &>/dev/null; then
 
   # System update using nala, and install essential packages
   sudo nala upgrade -y
-  sudo nala install -y curl git zsh # Essentials
+  sudo nala install -y curl git zsh build-essential # Essentials
 fi
 
 # Install brew if not installed
