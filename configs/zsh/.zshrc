@@ -15,6 +15,7 @@ eval "$(just --completions zsh)" # just
 which mise &> /dev/null && eval "$(mise completion zsh)" # mise auto completion
 eval "$(gum completion zsh)" # gum
 eval "$(skate completion zsh)" # skate
+which kv &> /dev/null && eval "$(kv completion zsh)" # mise auto completion
 
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
