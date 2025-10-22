@@ -52,7 +52,7 @@ stow-all:
   #!/usr/bin/bash
 
   for app in *; do
-    stow -t "$HOME" -R "$app" 2> /dev/null || echo "Could not stow $app" && echo "Stowed $app"
+    stow -t "$HOME" -R "$app" && echo "Stowed $app" || echo "Could not stow $app"
   done
 
 # List existing configs
