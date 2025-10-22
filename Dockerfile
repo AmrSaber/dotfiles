@@ -20,7 +20,8 @@ RUN bash -n ./init.sh
 # Run init.sh in headless mode
 RUN HEADLESS=1 NO_STOW=1 ./init.sh
 
-COPY --chown=user:user ./configs .
+COPY --chown=user:user . .
+
 RUN rm -rf ~/.zshrc
 RUN /home/linuxbrew/.linuxbrew/bin/just stow-all
 
