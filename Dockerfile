@@ -23,7 +23,7 @@ RUN HEADLESS=1 NO_STOW=1 ./init.sh
 COPY --chown=user:user . .
 
 RUN rm -rf ~/.zshrc
-RUN /home/linuxbrew/.linuxbrew/bin/just stow-all
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && just stow-all
 
 WORKDIR /home/user
 
