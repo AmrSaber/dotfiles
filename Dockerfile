@@ -22,7 +22,7 @@ RUN HEADLESS=1 NO_STOW=1 ./init.sh
 
 COPY --chown=user:user ./configs .
 RUN rm -rf ~/.zshrc
-RUN just stow-all
+RUN /home/linuxbrew/.linuxbrew/bin/just stow-all
 
 WORKDIR /home/user
 
