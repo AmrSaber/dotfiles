@@ -26,8 +26,7 @@ brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
 brew install go python rust                            # Programming languages
 
 # Activate mise based on current shell
-current_shell=$(basename $(echo $0))
-eval "$(mise activate $current_shell)"
+eval "$(mise activate "$(basename "$SHELL")")"
 
 # More programming languages
 mise use -g bun node@lts
@@ -43,8 +42,10 @@ if [ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]; then
 fi
 
 # Stow all the configurations
-rm ~/.zshrc
-just stow-all
+if [ -z "${NO_STOW:-}" ]; then
+  rm ~/.zshrc
+  just stow-all
+fi
 
 cp ./themes/zsh/* ~/.oh-my-zsh/themes/
 

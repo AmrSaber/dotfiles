@@ -11,13 +11,18 @@ RUN useradd -m -s /bin/bash user && \
 USER user
 WORKDIR /home/user/.dotfiles
 
-COPY --chown=user:user . .
+COPY --chown=user:user ./init.sh .
+COPY --chown=user:user ./themes .
 
 # Make sure init.sh has no syntax errors
 RUN bash -n ./init.sh
 
 # Run init.sh in headless mode
-RUN HEADLESS=1 ./init.sh
+RUN HEADLESS=1 NO_STOW=1 ./init.sh
+
+COPY --chown=user:user ./configs .
+RUN rm -rf ~/.zshrc
+RUN just stow-all
 
 WORKDIR /home/user
 
