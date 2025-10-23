@@ -13,9 +13,9 @@ which mise &> /dev/null && eval "$(mise activate zsh)" # mise
 
 # Auto completion
 eval "$(just --completions zsh)"
-which mise &> /dev/null && eval "$(mise completion zsh)"
+which mise &>/dev/null && eval "$(mise completion zsh)"
 eval "$(gum completion zsh)"
-eval "$(skate completion zsh)"
+which skate &>/dev/null && eval "$(skate completion zsh)"
 which kv &>/dev/null && eval "$(kv completion zsh)"
 
 # === Exports ===
