@@ -1,6 +1,7 @@
 # PATH updates
 export PATH="$PATH:$HOME/go/bin" # Go bin
 export PATH="$PATH:$HOME/.cargo/bin" # Cargo bin
+export PATH="$PATH:$HOME/.local/bin" # Local bin
 
 # === Packages Completions and Setup ===
 # Setup zsh auto completion
@@ -11,11 +12,11 @@ autoload -Uz compinit && compinit
 which mise &> /dev/null && eval "$(mise activate zsh)" # mise
 
 # Auto completion
-eval "$(just --completions zsh)" # just
-which mise &> /dev/null && eval "$(mise completion zsh)" # mise auto completion
-eval "$(gum completion zsh)" # gum
-eval "$(skate completion zsh)" # skate
-which kv &> /dev/null && eval "$(kv completion zsh)" # mise auto completion
+eval "$(just --completions zsh)"
+which mise &> /dev/null && eval "$(mise completion zsh)"
+eval "$(gum completion zsh)"
+eval "$(skate completion zsh)"
+which kv &>/dev/null && eval "$(kv completion zsh)"
 
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
