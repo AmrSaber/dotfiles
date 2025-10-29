@@ -87,6 +87,10 @@ silent() {
   $@ &>/dev/null
 }
 
+# Perserve auto-completion for passed commands
+compdef _precommand only
+compdef _precommand silent
+
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
