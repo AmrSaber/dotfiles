@@ -11,22 +11,26 @@ keymap.set("n", "<leader>ww", ":wa<CR>", { desc = "Save all" })
 keymap.set("n", "<leader>wq", ":wqa<CR>", { desc = "Save all and quit" })
 
 -- Goto Import
-vim.keymap.set('n', 'gi', function()
-  local word = vim.fn.expand('<cword>')
-  vim.cmd('silent! /\\<' .. word .. '\\>')
-end, { desc = 'Go to import statement' })
+keymap.set("n", "gi", function()
+  local word = vim.fn.expand("<cword>")
+  vim.cmd("silent! /\\<" .. word .. "\\>")
+end, { desc = "Go to import statement" })
 
 -- Marks
 local wk = require("which-key")
-wk.add({{ "<leader>m", group = "Marks", desc="Manage marks" }})
-vim.keymap.set("n", "<leader>md", ":delm", { desc = "Delete mark" })
-vim.keymap.set("n", "<leader>mD", ":delm! | delm A-Z0-9<CR>:wshada!<CR>", { desc = "Delete all marks" })
+wk.add({ { "<leader>m", group = "Marks", desc = "Manage marks" } })
+keymap.set("n", "<leader>md", ":delm", { desc = "Delete mark" })
+keymap.set("n", "<leader>mD", ":delm! | delm A-Z0-9<CR>:wshada!<CR>", { desc = "Delete all marks" })
 
 -- Deletions do not copy - Only "d" and "D" copy
-vim.keymap.set('n', 'x', '"_x')
-vim.keymap.set('n', 'X', '"_X')
-vim.keymap.set('v', 'x', '"_x')
-vim.keymap.set('n', 'c', '"_c')
-vim.keymap.set('n', 'C', '"_C')
-vim.keymap.set('v', 'c', '"_c')
-vim.keymap.set('v', 'p', '"_dP')
+keymap.set("n", "x", '"_x')
+keymap.set("n", "X", '"_X')
+keymap.set("v", "x", '"_x')
+keymap.set("n", "c", '"_c')
+keymap.set("n", "C", '"_C')
+keymap.set("v", "c", '"_c')
+keymap.set("v", "p", '"_dP')
+
+-- Open mini.files through <leader>e
+keymap.set("n", "<leader>e", "<leader>fm", { remap = true, desc = "Open mini.files" })
+keymap.set("n", "<leader>E", "<leader>fm", { remap = true, desc = "Open mini.files (cwd)" })

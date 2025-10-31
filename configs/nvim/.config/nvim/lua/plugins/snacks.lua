@@ -11,19 +11,13 @@ return {
       end,
       desc = "Find Files (cwd, hidden, no git-ignored)",
     },
+    { "<leader>e", false },
+    { "<leader>E", false },
+    { "<leader>fe", false },
+    { "<leader>fE", false },
   },
+
   opts = {
-    picker = {
-      sources = {
-        -- explorer opens to the right
-        explorer = {
-          layout = {
-            layout = {
-              position = "right"
-            }
-          }
-        }
-      }
-    }
-  }
+    explorer = { enabled = false },
+  },
 }
