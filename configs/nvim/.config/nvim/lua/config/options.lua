@@ -12,8 +12,12 @@ if os.getenv("SSH_CLIENT") or os.getenv("SSH_TTY") then
     },
     paste = {
       -- Kitty does not allow apps to read clipboard easily
-      ["+"] = function() return {}, "" end,
-      ["*"] = function() return {}, "" end,
+      ["+"] = function()
+        return {}, ""
+      end,
+      ["*"] = function()
+        return {}, ""
+      end,
     },
   }
 end

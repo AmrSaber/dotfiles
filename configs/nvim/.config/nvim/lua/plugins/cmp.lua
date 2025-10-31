@@ -5,9 +5,16 @@ return {
       completeopt = "menu,menuone,noinsert",
     },
 
+    -- Only use built-in snippets, do not insert from LSP
+    snippet = {
+      expand = function(args)
+        vim.snippet.expand(args.body)
+      end,
+    },
+
     sources = {
-      { name = "nvim_lsp" }, -- lsp
-      { name = "path" }, -- file system paths
+      { name = "nvim_lsp" }, -- LSP
+      { name = "path" }, -- file system path
     },
 
     performance = {
