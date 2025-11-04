@@ -21,6 +21,7 @@ which kv &>/dev/null && eval "$(kv completion zsh)"
 # === Exports ===
 export DEVICE_NAME="$(hostname)"
 export EDITOR="nvim"
+export SUDO_EDITOR="/home/linuxbrew/.linuxbrew/bin/nvim"
 
 # === Aliases ===
 alias sk="skate"
