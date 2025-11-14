@@ -29,8 +29,9 @@ alias dc="docker compose"
 alias cat="bat --plain"
 alias v="nvim"
 alias j="just"
+alias ff="fastfetch"
 
-alias nvimz="nvim ~/.zshrc ~/.zsh_local && omz reload"
+alias vz="nvim ~/.zshrc ~/.zsh_local && omz reload"
 
 # Bookmarks
 alias jd="jump"       # Jump directory
