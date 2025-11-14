@@ -1,5 +1,23 @@
 #!/usr/bin/env bash
 
+# Termux has totally different setup
+if [ -n "$TERMUX_VERSION" ]; then
+  nala install curl git openssh zsh neovim just zellij stow gum jq # Core tools
+  nala install bat fd ripgrep eza zoxide yazi                      # Modern alternatives
+
+  # Install grun, glibc-wrapper. This must be on 2 steps
+  nala install glibc-repo
+  nala install glibc-runner
+
+  # Install oh-my-zsh
+  [[ ! -d ~/.oh-my-zsh ]] && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+  # Install zshmarks
+  [[ ! -d ~/.oh-my-zsh/custom/plugins/zshmarks ]] && git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins/zshmarks
+
+  exit 0
+fi
+
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
   # Install nala if it does not exist
