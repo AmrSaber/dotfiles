@@ -3,53 +3,6 @@ export PATH="$PATH:$HOME/go/bin" # Go bin
 export PATH="$PATH:$HOME/.cargo/bin" # Cargo bin
 export PATH="$PATH:$HOME/.local/bin" # Local bin
 
-# === Packages Completions and Setup ===
-# Setup zsh auto completion
-autoload -Uz compinit && compinit
-
-# Activation
-[ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
-which mise &> /dev/null && eval "$(mise activate zsh)" # mise
-
-# Auto completion
-eval "$(just --completions zsh)"
-which mise &>/dev/null && eval "$(mise completion zsh)"
-eval "$(gum completion zsh)"
-which skate &>/dev/null && eval "$(skate completion zsh)"
-which kv &>/dev/null && eval "$(kv completion zsh)"
-
-# === Exports ===
-export DEVICE_NAME="$(hostname)"
-export EDITOR="nvim"
-export SUDO_EDITOR="/home/linuxbrew/.linuxbrew/bin/nvim"
-
-# === Aliases ===
-alias sk="skate"
-alias dc="docker compose"
-alias cat="bat --plain"
-alias v="nvim"
-alias j="just"
-alias ff="fastfetch"
-
-alias vz="nvim ~/.zshrc ~/.zsh_local && omz reload"
-
-# Bookmarks
-alias jd="jump"       # Jump directory
-alias bm="bookmark"   # Bookmark directory
-alias dm="deletemark" # Delete mark
-alias sm="showmarks"  # Show marks
-
-# Python
-alias python="python3"
-alias pip="pip3"
-alias p-env="python -m venv .venv"
-alias p-activate="source .venv/bin/activate"
-alias p-deactivate="deactivate"
-
-alias dotenv='export $(cat .evn | xargs)'
-alias scripts='jq ".scripts" package.json'
-alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
-
 # === Functions ===
 # Start zellij session if not already inside one
 zd() {
@@ -64,10 +17,7 @@ zd() {
   fi
 }
 
-device() {
-  echo $DEVICE_NAME
-}
-
+# Blocks until given task is completed
 wait-for() {
   local task=$1
 
@@ -81,17 +31,97 @@ wait-for() {
   done
 }
 
+# Conditionally runs given command if tool exists
+ceval() {
+  if which $1 &>/dev/null; then
+    eval "$($@)"
+  fi
+}
+
+# Prints $DEVICE_NAME
+device() {
+  echo $DEVICE_NAME
+}
+
+# Runs command then exits
 only() {
   $@ && exit
 }
 
+# Silently runs command
 silent() {
   $@ &>/dev/null
+}
+
+start-renamed() {
+  zellij ac rename-pane $1
+  shift
+
+  "$@"
+  local exit_code=$?
+
+  zellij ac undo-rename-pane
+  return $exit_code
 }
 
 # Perserve auto-completion for passed commands
 compdef _precommand only
 compdef _precommand silent
+compdef _precommand ceval
+
+# === Packages Completions and Setup ===
+# Setup zsh auto completion
+autoload -Uz compinit && compinit
+
+# Activation
+[ -f /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # homebrew
+ceval mise activate zsh
+
+# Auto completion
+ceval mise completion zsh
+ceval just --completions zsh
+ceval gum completion zsh
+ceval skate completion zsh
+ceval kv completion zsh
+
+# === Exports ===
+export DEVICE_NAME="$(hostname)"
+export EDITOR="nvim"
+export SUDO_EDITOR="/home/linuxbrew/.linuxbrew/bin/nvim"
+
+# === Aliases ===
+# Renames
+alias cat="bat --plain"
+
+# Short-cuts
+alias sk="skate"
+alias dc="docker compose"
+alias j="just"
+alias z="zellij"
+alias ff="fastfetch"
+
+# Nvim
+alias v="nvim"
+alias vz="nvim ~/.zshrc ~/.zsh_local && omz reload"
+alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always {}")'
+
+# Bookmarks
+alias jd="jump"       # Jump [to] directory
+alias bm="bookmark"   # Bookmark directory
+alias dm="deletemark" # Delete mark
+alias sm="showmarks"  # Show marks
+
+# Python
+alias python="python3"
+alias pip="pip3"
+alias p-env="python -m venv .venv"
+alias p-activate="source .venv/bin/activate"
+alias p-deactivate="deactivate"
+
+# Utils
+alias dotenv='export $(cat .evn | xargs)'
+alias scripts='jq ".scripts" package.json'
+alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
 
 # === Zsh Settings ===
 # Path to oh-my-zsh installation.
@@ -124,4 +154,3 @@ if which eza &>/dev/null; then
   alias lt="l --tree"
   alias llt="ll --tree"
 fi
-
