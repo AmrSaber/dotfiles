@@ -17,13 +17,13 @@ which brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.co
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # Install needed brew packages
-brew install neovim just mise zellij stow gum skate jq # Core tools
-brew install bat fd ripgrep eza                        # Modern alternatives
-brew install tlrc fzf yazi                             # Quality of life
-brew install neofetch fastfetch btop                   # Extras
-brew install ffmpeg sevenzip poppler resvg imagemagick # Yazi tool-kit to provide previews
-brew install --cask font-ubuntu-mono-nerd-font         # Nerd font
-brew install go python rust                            # Programming languages
+brew install neovim just mise zellij stow gum amrsaber/tap/kv jq # Core tools
+brew install bat fd ripgrep eza                                  # Modern alternatives
+brew install tlrc fzf yazi                                       # Quality of life
+brew install neofetch fastfetch btop                             # Extras
+brew install ffmpeg sevenzip poppler resvg imagemagick           # Yazi tool-kit to provide previews
+brew install --cask font-ubuntu-mono-nerd-font                   # Nerd font
+brew install go python rust                                      # Programming languages
 
 # Activate mise based on current shell
 eval "$(mise activate "$(basename "$SHELL")")"
