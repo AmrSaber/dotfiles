@@ -2,9 +2,9 @@ add_newline = false
 
 format = """
 $python\
-$fill\
-$container\
 $hostname\
+$container\
+$fill\
 \
 $line_break\
 \
@@ -17,50 +17,53 @@ $line_break\
 $character
 """
 
-right_format = "$cmd_duration"
+right_format = '$cmd_duration'
 
 [fill]
-style = "bright-black"
+style = 'bright-black'
 symbol = '-'
 
 [directory]
-style = "blue"
+style = 'blue'
 truncate_to_repo = false
 truncation_length = -1
 
 [character]
-success_symbol = "[❯](bold blue)"
-error_symbol = "[❯](red)"
+success_symbol = '[❯](bold blue)'
+error_symbol = '[❯](red)'
 
 [hostname]
-format = ' [$hostname]($style)'
+format = '[\[$hostname\]]($style)'
+
+[container]
+format = '[\[$symbol $name\]]($style)'
 
 [git_branch]
-format = "[$branch]($style)"
-style = "white"
+format = '[$branch]($style)'
+style = 'white'
 
 [git_status]
-format = "[(*$all_status)]($style)"
+format = '[(*$all_status)]($style)'
 
 # u200b (sometimes displayed as <200b>) is the zero-width character
-# This causes any status update to show "*".
+# This causes any status update to show '*'.
 # The () in the format makes the whole block only shows when at least one of the variables has a value
-conflicted = "​"
-untracked = "​"
-modified = "​"
-staged = "​"
-renamed = "​"
-deleted = "​"
-typechanged = "​"
-stashed = "​"
+conflicted = '​'
+untracked = '​'
+modified = '​'
+staged = '​'
+renamed = '​'
+deleted = '​'
+typechanged = '​'
+stashed = '​'
 
 [cmd_duration]
-format = "[\\[$duration\\]]($style) "
-style = "white"
+format = '[\[$duration\]]($style) '
+style = 'white'
 min_time = 1_000
 
 [python]
-format = "[\\[$virtualenv\\]]($style)"
-style = "white"
+format = '[\[$virtualenv\]]($style)'
+style = 'white'
 detect_extensions = []
 detect_files = []
