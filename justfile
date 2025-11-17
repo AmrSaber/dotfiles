@@ -31,7 +31,7 @@ load-config:
 # Stows given packages. If none provided, interactive select is used.
 [working-directory: './configs']
 stow *apps:
-  #!/usr/bin/bash
+  #!/usr/bin/env bash
  
   apps={{apps}}
 
@@ -49,7 +49,7 @@ stow *apps:
 # Stows all configs
 [working-directory: './configs']
 stow-all:
-  #!/usr/bin/bash
+  #!/usr/bin/env bash
 
   for app in *; do
     stow -t "$HOME" -R "$app" && echo "Stowed $app" || echo "Could not stow $app"
