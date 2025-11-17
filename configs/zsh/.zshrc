@@ -111,7 +111,6 @@ autoload -Uz compinit && compinit
 # Perserve auto-completion for passed commands
 compdef _precommand only
 compdef _precommand silent
-compdef _precommand ceval
 
 [ -f $BREW_PREFIX/bin/brew ] && eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
 ceval mise activate zsh
@@ -122,6 +121,9 @@ ceval just --completions zsh
 ceval gum completion zsh
 ceval skate completion zsh
 ceval kv completion zsh
+
+# Delete function defintion
+unfunction ceval
 
 # Load local config if present
 [ -f ~/.zsh_local ] && source "$HOME/.zsh_local"
