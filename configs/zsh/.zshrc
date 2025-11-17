@@ -38,6 +38,9 @@ alias scripts='jq ".scripts" package.json'
 alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
 
 # === Exports ===
+DEVICE_NAME="$(hostname)"
+export DEVICE_NAME
+
 export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
 
 export EDITOR="nvim"
@@ -53,7 +56,7 @@ zd() {
   list=$(zellij ls 2>/dev/null)
 
   if [ -z "$list" ] || echo "$list" | grep -ivq 'current'; then
-    zellij a -c "$(hostname)"
+    zellij a -c "$DEVICE_NAME"
   elif [ -z "$quiet" ]; then
     gum style --foreground 03 "Already inside zellij!" >/dev/stderr
   fi
