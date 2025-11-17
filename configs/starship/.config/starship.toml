@@ -5,6 +5,7 @@ $python\
 $hostname\
 $container\
 $fill\
+$status\
 \
 $line_break\
 \
@@ -61,6 +62,10 @@ stashed = '​'
 format = '[\[$duration\]]($style) '
 style = 'white'
 min_time = 1_000
+
+[status]
+format = '[\[$status( $common_meaning)(; SIG$signal_name $signal_number)\]]($style)'
+disabled = false
 
 [python]
 format = '[\[$virtualenv\]]($style)'
