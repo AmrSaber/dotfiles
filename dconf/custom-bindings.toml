@@ -1,10 +1,10 @@
 [custom0]
-binding='<Super>c'
+binding='<Super>t'
 command='kitty'
 name='Start Terminal'
 
 [custom1]
-binding='<Super>v'
+binding='<Super>b'
 command='vivaldi.vivaldi-stable'
 name='Vivaldi'
 
