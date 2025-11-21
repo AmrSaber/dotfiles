@@ -56,7 +56,7 @@ staged = '​'
 renamed = '​'
 deleted = '​'
 typechanged = '​'
-stashed = '​'
+stashed = ''
 
 [cmd_duration]
 format = '[\[$duration\]]($style) '
