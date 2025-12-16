@@ -37,14 +37,14 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 # Install needed brew packages
 brew install neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
 brew install bat fd ripgrep eza                                           # Modern alternatives
-brew install tlrc fzf yazi                                                # Quality of life
+brew install tlrc fzf yazi yq                                             # Quality of life
 brew install neofetch fastfetch btop                                      # Extras
 brew install ffmpeg sevenzip poppler resvg imagemagick                    # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font                            # Nerd font
 brew install go python                                                    # Programming languages
 
-# Activate mise based on current shell
-eval "$(mise activate "$(basename "$SHELL")")"
+# Activate mise based on current shell (always bash as required by the shebang)
+eval "$(mise activate bash)"
 
 # More programming languages
 mise use -g bun node@lts
