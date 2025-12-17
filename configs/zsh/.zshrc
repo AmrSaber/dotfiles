@@ -104,6 +104,34 @@ start-renamed() {
   "$@"
 }
 
+# Remove anything that comes after file end
+self-cleanup() {
+  file_name="$(readlink -f $HOME/.zshrc )"
+
+  # Find the last occurrence of "# === End ==="
+  last_line=$(grep -n "# === End ===" "$file_name" | tail -1 | cut -d ":" -f 1)
+
+  # Check if there's content after the marker
+  if [ "$(wc -l <"$file_name")" -gt "$last_line" ]; then
+    gum style --foreground 3 "[.zshrc self-cleanup] Removing appended content:"
+
+    # Print everything after the last occurrence
+    tail -n +$((last_line + 1)) "$file_name"
+
+    # Update self to remove everything that was printed
+    temp_file=$(mktemp)
+    trap "rm -f $temp_file" EXIT # Always remove file on exit
+
+    head -n "$last_line" "$file_name" >"$temp_file"
+    chmod --reference="$file_name" "$temp_file"
+    mv "$temp_file" "$file_name"
+
+    echo
+    gum style --foreground 3 "[.zshrc self-cleanup] Reloading zsh..."
+    omz reload
+  fi
+}
+
 # === Setup ===
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
@@ -164,3 +192,7 @@ if which eza &>/dev/null; then
   alias lt="l --tree"
   alias llt="ll --tree"
 fi
+
+self-cleanup
+
+# === End ===
