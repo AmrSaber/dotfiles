@@ -12,7 +12,6 @@ USER user
 WORKDIR /home/user/.dotfiles
 
 COPY --chown=user:user ./init.sh .
-COPY --chown=user:user ./themes .
 
 # Make sure init.sh has no syntax errors
 RUN bash -n ./init.sh
