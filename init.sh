@@ -18,6 +18,12 @@ if [ -n "$TERMUX_VERSION" ]; then
   exit 0
 fi
 
+# Fedora setup
+if which dnf &>/dev/null; then
+  sudo dnf upgrade -y
+  sudo dnf install -y curl git zsh snapd ps @development-tools # Essentials - ps is required by brew
+fi
+
 # If apt is installed: update then use nala
 if which apt &>/dev/null; then
   # Install nala if it does not exist
@@ -57,8 +63,9 @@ fi
 
 # If not in SSH connection nor in headless mode
 if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
-  # Install kitty if on Debian based system
+  # Install kitty
   which nala &>/dev/null && sudo nala install -y kitty
+  which dnf &>/dev/null && sudo dnf install -y kitty
 
   # Install browsers
   if which snap &>/dev/null && gum confirm 'Install browsers?'; then
