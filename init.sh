@@ -35,10 +35,11 @@ if which apt &>/dev/null; then
 fi
 
 # Install brew if not installed
-which brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew_path="/home/linuxbrew/.linuxbrew/bin/brew"
+[ -f "$brew_path" ] || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Activate brew
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+eval "$("$brew_path" shellenv)"
 
 # Install needed brew packages
 brew install neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
