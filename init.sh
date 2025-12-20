@@ -21,7 +21,7 @@ fi
 # Fedora setup
 if which dnf &>/dev/null; then
   sudo dnf upgrade -y
-  sudo dnf install -y curl git zsh snapd ps @development-tools # Essentials - ps is required by brew
+  sudo dnf install -y curl git zsh ps @development-tools # Essentials - ps is required by brew
 fi
 
 # If apt is installed: update then use nala
@@ -68,9 +68,20 @@ if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
   which nala &>/dev/null && sudo nala install -y kitty
   which dnf &>/dev/null && sudo dnf install -y kitty
 
-  # Install browsers
-  if which snap &>/dev/null && gum confirm 'Install browsers?'; then
-    which nala &>/dev/null && sudo nala remove firefox
-    sudo snap install vivaldi firefox chromium
+  # === Install browsers ===
+
+  # Firefox & Chromium
+  if which dnf &>/dev/null; then
+    sudo dnf install -y chromium firefox
+  elif which snap &>/dev/null; then
+    which nala &>/dev/null && sudo nala remove firefox # Usually outdated
+    sudo snap install chromium firefox
+  fi
+
+  # Vivaldi
+  if which flatpak &>/dev/null; then
+    flatpak install -y vivaldi
+  elif which snap &>/dev/null; then
+    sudo snap install vivaldi
   fi
 fi
