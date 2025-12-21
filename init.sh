@@ -50,11 +50,25 @@ brew install ffmpeg sevenzip poppler resvg imagemagick                    # Yazi
 brew install --cask font-ubuntu-mono-nerd-font                            # Nerd font
 brew install go python                                                    # Programming languages
 
-# Activate mise based on current shell (always bash as required by the shebang)
-eval "$(mise activate bash)"
-
 # More programming languages
+eval "$(mise activate bash)"
 mise use -g bun node@lts
+
+# Install bin
+if ! which bin &>/dev/null; then
+  # Initial install using go
+  go install github.com/marcosnils/bin@latest
+
+  tmp_dir="$(mktemp -d)"
+  tmp_file="$tmp_dir/bin"
+
+  # Cleanup
+  trap "rm -rf $tmp_dir" EXIT
+
+  # Get bin to track bin
+  mv "$(which bin)" "$tmp_file"
+  "$tmp_file" install github.com/marcosnils/bin
+fi
 
 # Stow all the configurations
 if [ -z "${NO_STOW:-}" ]; then
