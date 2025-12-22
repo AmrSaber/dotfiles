@@ -19,5 +19,16 @@ return {
 
   opts = {
     explorer = { enabled = false },
+
+    picker = {
+      formatters = {
+        -- Only truncate file path after it exceeds 9999 characters
+        -- Effectively disables truncation
+        file = {
+          truncate = "right",
+          min_width = 9999,
+        },
+      },
+    },
   },
 }
