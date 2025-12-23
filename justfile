@@ -1,13 +1,7 @@
 # Paths
-dconf_dir := 'dconf'
-shell_dump := dconf_dir / 'shell.toml'
-bindings_dump := dconf_dir / 'keybindings.toml'
-custom_bindings_dump := dconf_dir / 'custom-bindings.toml'
-
-# dconf paths
-dconf_shell := '/org/gnome/shell/'
-dconf_bindings := '/org/gnome/desktop/wm/keybindings/'
-dconf_custom_bindings := '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/'
+backup_dir := 'backup'
+extensions_dir := backup_dir / 'extensions'
+extension_configs_path := backup_dir / 'extension-configs.dconf'
 
 set fallback
 
@@ -15,18 +9,22 @@ set fallback
 @default:
   just --list --unsorted
 
-# Dumps dconf configs
-dump-config:
-  mkdir -p {{dconf_dir}}
-  dconf dump {{dconf_shell}} > {{shell_dump}}
-  dconf dump {{dconf_bindings}} > {{bindings_dump}}
-  dconf dump {{dconf_custom_bindings}} > {{custom_bindings_dump}}
+# Backup extensions and their config
+backup-extensions:
+  #!/usr/bin/env bash
 
-# Loads dconf configs
-load-config:
-  dconf load {{dconf_shell}} < {{shell_dump}}
-  dconf load {{dconf_bindings}} < {{bindings_dump}}
-  dconf load {{dconf_custom_bindings}} < {{custom_bindings_dump}}
+  mkdir -p {{backup_dir}}
+
+  # Remove old extensions
+  rm -rf {{extensions_dir}}
+
+  cp -r ~/.local/share/gnome-shell/extensions {{extensions_dir}} # Backup extensions
+  dconf dump /org/gnome/shell/extensions/ > {{extension_configs_path}} # Backup extension configs
+
+# Restore extensions and their config
+restore-extensions:
+  cp -r {{extensions_dir}} ~/.local/share/gnome-shell/extensions
+  dconf load /org/gnome/shell/extensions/ < {{extension_configs_path}} # Load extension configs
 
 # Stows given packages. If none provided, interactive select is used.
 [working-directory: './configs']

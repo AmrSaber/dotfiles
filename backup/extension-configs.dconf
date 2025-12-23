@@ -1,0 +1,100 @@
+[auto-move-windows]
+application-list=['kitty.desktop:2', 'vivaldi_vivaldi-stable.desktop:1']
+
+[caffeine]
+cli-toggle=true
+enable-fullscreen=false
+indicator-position=0
+indicator-position-index=0
+indicator-position-max=2
+restore-state=true
+show-indicator='always'
+toggle-shortcut=['']
+user-enabled=true
+
+[dash-to-dock]
+always-center-icons=true
+animation-time=0.19999999999999968
+apply-custom-theme=false
+background-opacity=0.5
+click-action='minimize-or-previews'
+custom-background-color=false
+custom-theme-shrink=true
+dance-urgent-applications=false
+dash-max-icon-size=48
+dock-position='BOTTOM'
+extend-height=false
+height-fraction=0.90000000000000002
+hot-keys=false
+icon-size-fixed=false
+intellihide-mode='ALL_WINDOWS'
+middle-click-action='launch'
+multi-monitor=true
+preferred-monitor=-2
+preferred-monitor-by-connector='DP-5'
+preview-size-scale=0.0
+running-indicator-style='DEFAULT'
+scroll-action='cycle-windows'
+shift-click-action='minimize'
+shift-middle-click-action='launch'
+show-dock-urgent-notify=false
+show-icons-emblems=true
+show-mounts=false
+show-trash=false
+transparency-mode='FIXED'
+
+[just-perfection]
+animation=2
+panel-in-overview=true
+support-notifier-type=0
+workspace-switcher-size=0
+
+[space-bar/appearance]
+application-styles='.space-bar {\n  -natural-hpadding: 12px;\n}\n\n.space-bar-workspace-label.active {\n  margin: 0 4px;\n  background-color: rgba(255,255,255,0.3);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive.empty {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,0.5);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}'
+
+[space-bar/behavior]
+indicator-style='workspaces-bar'
+position='left'
+scroll-wheel='workspaces-bar'
+scroll-wheel-wrap-around=false
+smart-workspace-names=false
+
+[space-bar/shortcuts]
+activate-empty-key=@as []
+activate-previous-key=@as []
+enable-move-to-workspace-shortcuts=true
+move-workspace-left=@as []
+move-workspace-right=@as []
+
+[space-bar/state]
+version=34
+
+[switcher]
+activate-after-ms=uint32 0
+activate-by-key=uint32 0
+fade-enable=true
+font-size=uint32 20
+launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":8,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":6,"steam.desktop":2,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":8,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":3,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1}'
+matching=uint32 1
+ordering=uint32 1
+show-executables=true
+show-switcher=['<Super>space']
+workspace-indicator=true
+
+[tophat]
+mem-abs-units=true
+mem-display='chart'
+mount-to-monitor='/'
+show-disk=false
+show-fs=false
+show-icons=true
+show-menu-actions=true
+use-system-accent=true
+
+[vitals]
+hot-sensors=['_memory_usage_', '_processor_usage_', '__network-rx_max__']
+icon-style=0
+show-battery=true
+show-fan=true
+show-temperature=true
+show-voltage=true
