@@ -106,7 +106,7 @@ start-renamed() {
 
 # Remove anything that comes after file end
 self-cleanup() {
-  file_name="$(readlink -f $HOME/.zshrc )"
+  file_name="$(readlink -f "$HOME/.zshrc")"
 
   # Find the last occurrence of "# === End ==="
   last_line=$(grep -n "# === End ===" "$file_name" | tail -1 | cut -d ":" -f 1)
@@ -130,6 +130,37 @@ self-cleanup() {
     gum style --foreground 3 "[.zshrc self-cleanup] Reloading zsh..."
     omz reload
   fi
+}
+
+# Preview all ANSI colours
+colours() {
+  # Starting from colour 22, colours cluster into groups of 6
+  # There are 234 colours, leading to 39 groups of 6
+  # If we want each column to contain 5 groups, then we will have 8 columns
+  #
+  # Each entry takes 10 characters, adding 2 spaces gives 12 characters
+  # 12 (column size) * 8 (number of columns) = 96
+  # So width tries to be 96 unless it's larger than current window width
+
+  # Output width cannot exceed window width
+  WIDTH=96
+  ((WIDTH > COLUMNS)) && WIDTH="$COLUMNS"
+
+  (
+    for i in {0..21}; do
+      tput setaf "$i"
+      echo "Colour $i"
+    done
+  ) | column --output-width "$WIDTH" --use-spaces 2
+
+  echo
+
+  (
+    for i in {22..255}; do
+      tput setaf "$i"
+      echo "Colour $i"
+    done
+  ) | column --output-width "$WIDTH" --use-spaces 2
 }
 
 # === Setup ===
@@ -173,7 +204,7 @@ fi
 
 # Install zshmarks
 if [ ! -d "$ZSH/custom/plugins/zshmarks" ]; then
-  git clone https://github.com/jocelynmallon/zshmarks.git ~/.oh-my-zsh/custom/plugins/zshmarks
+  git clone https://github.com/jocelynmallon/zshmarks.git "$ZSH/custom/plugins/zshmarks"
 fi
 
 plugins=(zshmarks docker starship fzf git golang node bun python)
