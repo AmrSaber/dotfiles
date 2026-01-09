@@ -45,7 +45,7 @@ eval "$("$brew_path" shellenv)"
 brew install neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
 brew install bat fd ripgrep eza                                           # Modern alternatives
 brew install tlrc fzf yazi yq                                             # Quality of life
-brew install neofetch fastfetch btop                                      # Extras
+brew install neofetch fastfetch btop shellcheck                           # Extras
 brew install ffmpeg sevenzip poppler resvg imagemagick                    # Yazi tool-kit to provide previews
 brew install --cask font-ubuntu-mono-nerd-font                            # Nerd font
 brew install go python                                                    # Programming languages
@@ -55,7 +55,7 @@ eval "$(mise activate bash)"
 mise use -g bun node@lts
 
 # Install bin
-if ! which bin &>/dev/null; then
+if ! command -v bin &>/dev/null; then
   # Initial install using go
   go install github.com/marcosnils/bin@latest
 
