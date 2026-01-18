@@ -8,7 +8,6 @@ export PATH="$PATH:$HOME/.local/bin:$HOME/bin" # Local bin
 alias cat="bat --plain"
 
 # Short-cuts
-alias sk="skate"
 alias dc="docker compose"
 alias j="just"
 alias z="zellij"
@@ -178,7 +177,6 @@ ceval mise activate zsh
 ceval mise completion zsh
 ceval just --completions zsh
 ceval gum completion zsh
-ceval skate completion zsh
 ceval kv completion zsh
 
 # Delete function defintion
