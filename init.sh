@@ -19,15 +19,15 @@ if [ -n "$TERMUX_VERSION" ]; then
 fi
 
 # Fedora setup
-if which dnf &>/dev/null; then
+if command -v dnf &>/dev/null; then
   sudo dnf upgrade -y
   sudo dnf install -y curl git zsh ps @development-tools # Essentials - ps is required by brew
 fi
 
 # If apt is installed: update then use nala
-if which apt &>/dev/null; then
+if command -v apt &>/dev/null; then
   # Install nala if it does not exist
-  which nala &>/dev/null || sudo apt update && sudo apt install nala -y
+  command -v nala &>/dev/null || sudo apt update && sudo apt install nala -y
 
   # System update using nala, and install essential packages
   sudo nala upgrade -y
@@ -64,11 +64,11 @@ mise use -g bun node@lts
 
 # Install bin
 if ! command -v bin &>/dev/null; then
-  │ # Initial install using go
-  │ go install github.com/marcosnils/bin@latest
+  # Initial install using go
+  go install github.com/marcosnils/bin@latest
 
-  │ # Cleanup - removed installed go package
-  │ trap "rm -f $(go env GOPATH)/bin/bin" EXIT
+  # Cleanup - remove installed go package
+  trap 'rm -f $(go env GOPATH)/bin/bin' EXIT
 
   if command -v bin; then
     # Get bin to track itself
@@ -87,23 +87,23 @@ fi
 # If not in SSH connection nor in headless mode
 if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
   # Install kitty
-  which nala &>/dev/null && sudo nala install -y kitty
-  which dnf &>/dev/null && sudo dnf install -y kitty
+  command -v nala &>/dev/null && sudo nala install -y kitty
+  command -v dnf &>/dev/null && sudo dnf install -y kitty
 
   # === Install browsers ===
 
   # Firefox & Chromium
-  if which dnf &>/dev/null; then
+  if command -v dnf &>/dev/null; then
     sudo dnf install -y chromium firefox
-  elif which snap &>/dev/null; then
-    which nala &>/dev/null && sudo nala remove firefox # Usually outdated
+  elif command -v snap &>/dev/null; then
+    command -v nala &>/dev/null && sudo nala remove firefox # Usually outdated
     sudo snap install chromium firefox
   fi
 
   # Vivaldi
-  if which flatpak &>/dev/null; then
+  if command -v flatpak &>/dev/null; then
     flatpak install -y vivaldi
-  elif which snap &>/dev/null; then
+  elif command -v snap &>/dev/null; then
     sudo snap install vivaldi
   fi
 fi
