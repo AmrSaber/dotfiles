@@ -64,18 +64,18 @@ mise use -g bun node@lts
 
 # Install bin
 if ! command -v bin &>/dev/null; then
-  # Initial install using go
-  go install github.com/marcosnils/bin@latest
+  │ # Initial install using go
+  │ go install github.com/marcosnils/bin@latest
 
-  tmp_dir="$(mktemp -d)"
-  tmp_file="$tmp_dir/bin"
+  │ # Cleanup - removed installed go package
+  │ trap "rm -f $(go env GOPATH)/bin/bin" EXIT
 
-  # Cleanup
-  trap "rm -rf $tmp_dir" EXIT
-
-  # Get bin to track bin
-  mv "$(which bin)" "$tmp_file"
-  "$tmp_file" install github.com/marcosnils/bin
+  if command -v bin; then
+    # Get bin to track itself
+    bin install github.com/marcosnils/bin
+  else
+    echo 'bin was not installed successfully!' >&2
+  fi
 fi
 
 # Stow all the configurations
