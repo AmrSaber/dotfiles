@@ -42,13 +42,21 @@ brew_path="/home/linuxbrew/.linuxbrew/bin/brew"
 eval "$("$brew_path" shellenv)"
 
 # Install needed brew packages
-brew install neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
-brew install bat fd ripgrep eza                                           # Modern alternatives
-brew install tlrc fzf yazi yq                                             # Quality of life
-brew install neofetch fastfetch btop shellcheck                           # Extras
-brew install ffmpeg sevenzip poppler resvg imagemagick                    # Yazi tool-kit to provide previews
-brew install --cask font-ubuntu-mono-nerd-font                            # Nerd font
-brew install go python                                                    # Programming languages
+brew_packages=(
+  neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
+  bat fd ripgrep eza                                           # Modern alternatives
+  tlrc fzf yazi yq                                             # Quality of life
+  neofetch fastfetch btop shellcheck                           # Extras
+  ffmpeg sevenzip poppler resvg imagemagick                    # Yazi tool-kit to provide previews
+  go python                                                    # Programming languages
+)
+
+brew_casks=(
+  font-ubuntu-mono-nerd-font # Nerd font
+)
+
+brew install "${brew_packages[@]}"
+brew install --cask "${brew_casks[@]}"
 
 # More programming languages
 eval "$(mise activate bash)"
