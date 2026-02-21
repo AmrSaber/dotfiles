@@ -46,6 +46,8 @@ export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
 export EDITOR="nvim"
 export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
 
+export NOTES_DIR="$HOME/notes"
+
 # === Functions ===
 # Start zellij session if not already inside one
 zd() {
@@ -120,7 +122,7 @@ self-cleanup() {
 
     # Update self to remove everything that was printed
     temp_file=$(mktemp)
-    trap "rm -f $temp_file" EXIT # Always remove file on exit
+    trap 'rm -f $temp_file' EXIT # Always remove file on exit
 
     head -n "$last_line" "$file_name" >"$temp_file"
     chmod --reference="$file_name" "$temp_file"
@@ -161,6 +163,11 @@ colours() {
       echo "Colour $i"
     done
   ) | column --output-width "$WIDTH" --use-spaces 2
+}
+
+notes() {
+  mkdir -p "$NOTES_DIR"
+  (cd "$NOTES_DIR" && nvim main.md)
 }
 
 # === Setup ===
