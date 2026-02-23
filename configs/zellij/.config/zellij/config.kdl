@@ -181,7 +181,7 @@ keybinds clear-defaults=true {
         bind "Alt o" { MoveTab "right"; }
         bind "Alt p" { TogglePaneInGroup; }
         bind "Alt Shift p" { ToggleGroupMarking; }
-        bind "Ctrl k" { Clear; }
+        bind "Ctrl k" { Write 21; WriteChars "reset\n"; }
     }
     shared_except "locked" "renametab" "renamepane" {
         bind "q" { SwitchToMode "locked"; }
