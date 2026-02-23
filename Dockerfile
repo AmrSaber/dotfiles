@@ -6,7 +6,8 @@ RUN dnf install -y sudo && dnf clean all
 RUN useradd -m -s /bin/bash user && \
   usermod -aG wheel user && \
   echo 'Defaults !requiretty' >> /etc/sudoers && \
-  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+  sed -i '/pam_loginuid/s/required/optional/' /etc/pam.d/sudo
 
 USER user
 WORKDIR /home/user/.dotfiles
