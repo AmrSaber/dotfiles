@@ -1,6 +1,6 @@
 # Personal dotenv files
 
 ## Usage
-- To load configs for an app, use `stow <app-name>` where app is one of the apps on the top-level (except `configs`)
-- To dump dconf, use `just dump-config`
-- To load dconf, use `just load-config`
+Start by installing all apps and tools using `./init.sh`.
+
+Commands are supported through `just` (which is installed as a part of `init` script). To see available commands, use `just` which will list all commands, then you can use them like `just <command>`, e.g. `just ls`.
