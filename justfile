@@ -62,7 +62,7 @@ alias ls := list-configs
 pull:
   git pull origin main
 
-# Add all, commit, and push
+# Add all, commit, pull, and push
 commit:
   git add .
   git commit
