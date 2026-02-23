@@ -1,12 +1,11 @@
-FROM ubuntu:latest
+FROM fedora:latest
 
-RUN apt-get update && apt-get install -y sudo
+RUN dnf install -y sudo && dnf clean all
 
 # Setup user "user"
 RUN useradd -m -s /bin/bash user && \
-  usermod -aG sudo user && \
-  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-  rm -rf /var/lib/apt/lists/*
+  usermod -aG wheel user && \
+  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER user
 WORKDIR /home/user/.dotfiles

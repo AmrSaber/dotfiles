@@ -2,8 +2,12 @@
 
 # Termux has totally different setup
 if [ -n "$TERMUX_VERSION" ]; then
-  nala install curl git openssh zsh neovim just zellij stow gum jq starship # Core tools
-  nala install bat fd ripgrep eza zoxide yazi                               # Modern alternatives
+  packages=(
+    curl git openssh zsh neovim just zellij stow gum jq starship # Core tools
+    bat fd ripgrep eza zoxide yazi                               # Modern alternatives
+  )
+
+  nala install "${packages[@]}"
 
   # Install grun, glibc-wrapper. This must be on 2 steps
   nala install glibc-repo
@@ -21,7 +25,7 @@ fi
 # Fedora setup
 if command -v dnf &>/dev/null; then
   sudo dnf upgrade -y
-  sudo dnf install -y curl git zsh ps @development-tools # Essentials - ps is required by brew
+  sudo dnf install -y curl git zsh ps @development-tools hostname # Essentials - ps is required by brew
 fi
 
 # If apt is installed: update then use nala
