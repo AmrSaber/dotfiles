@@ -9,3 +9,5 @@
   summary = show --summary
 [pull]
 	rebase = true
+[init]
+	defaultBranch = main
