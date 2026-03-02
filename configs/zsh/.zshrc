@@ -36,6 +36,7 @@ alias py-deactivate="deactivate"
 alias dotenv='export $(cat .evn | xargs)'
 alias scripts='jq ".scripts" package.json'
 alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
+alias open='xdg-open'
 
 # === Exports ===
 DEVICE_NAME="$(hostname)"
