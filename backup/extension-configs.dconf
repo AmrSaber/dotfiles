@@ -1,3 +1,10 @@
+[appindicator]
+icon-brightness=0.0
+icon-contrast=0.0
+icon-opacity=240
+icon-saturation=0.0
+icon-size=0
+
 [auto-move-windows]
 application-list=['kitty.desktop:2', 'vivaldi_vivaldi-stable.desktop:1']
 
@@ -22,6 +29,7 @@ custom-background-color=false
 custom-theme-shrink=true
 dance-urgent-applications=false
 dash-max-icon-size=48
+dock-fixed=false
 dock-position='BOTTOM'
 extend-height=false
 height-fraction=0.90000000000000002
@@ -46,22 +54,29 @@ transparency-mode='FIXED'
 [just-perfection]
 animation=2
 panel-in-overview=true
+panel-notification-icon=true
+power-icon=true
 support-notifier-type=0
+window-picker-icon=true
 workspace-switcher-size=0
 
 [space-bar/appearance]
 application-styles='.space-bar {\n  -natural-hpadding: 12px;\n}\n\n.space-bar-workspace-label.active {\n  margin: 0 4px;\n  background-color: rgba(255,255,255,0.3);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive.empty {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,0.5);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}'
 
 [space-bar/behavior]
+always-show-numbers=false
 indicator-style='workspaces-bar'
 position='left'
 scroll-wheel='workspaces-bar'
+scroll-wheel-debounce=false
+scroll-wheel-debounce-time=100
 scroll-wheel-wrap-around=false
 smart-workspace-names=false
 
 [space-bar/shortcuts]
 activate-empty-key=@as []
 activate-previous-key=@as []
+enable-activate-workspace-shortcuts=true
 enable-move-to-workspace-shortcuts=true
 move-workspace-left=@as []
 move-workspace-right=@as []
@@ -74,7 +89,7 @@ activate-after-ms=uint32 0
 activate-by-key=uint32 0
 fade-enable=true
 font-size=uint32 20
-launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":8,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":6,"steam.desktop":2,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":8,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":3,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1}'
+launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":9,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":13,"steam.desktop":2,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":16,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":4,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1,"org.gnome.Snapshot.desktop":1,"org.fedoraproject.MediaWriter.desktop":2,"gnome-about-panel.desktop":1}'
 matching=uint32 1
 ordering=uint32 1
 show-executables=true
@@ -92,8 +107,11 @@ show-menu-actions=true
 use-system-accent=true
 
 [vitals]
+alphabetize=true
+fixed-widths=true
 hot-sensors=['_memory_usage_', '_processor_usage_', '__network-rx_max__']
 icon-style=0
+menu-centered=true
 show-battery=true
 show-fan=true
 show-temperature=true
