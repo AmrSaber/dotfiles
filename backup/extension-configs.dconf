@@ -6,7 +6,7 @@ icon-saturation=0.0
 icon-size=0
 
 [auto-move-windows]
-application-list=['kitty.desktop:2', 'vivaldi_vivaldi-stable.desktop:1']
+application-list=['kitty.desktop:2', 'com.vivaldi.Vivaldi.desktop:1', 'steam.desktop:3']
 
 [caffeine]
 cli-toggle=true
@@ -89,7 +89,7 @@ activate-after-ms=uint32 0
 activate-by-key=uint32 0
 fade-enable=true
 font-size=uint32 20
-launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":9,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":13,"steam.desktop":2,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":16,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":4,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1,"org.gnome.Snapshot.desktop":1,"org.fedoraproject.MediaWriter.desktop":2,"gnome-about-panel.desktop":1}'
+launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":10,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":13,"steam.desktop":8,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":16,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":4,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1,"org.gnome.Snapshot.desktop":1,"org.fedoraproject.MediaWriter.desktop":2,"gnome-about-panel.desktop":1}'
 matching=uint32 1
 ordering=uint32 1
 show-executables=true
@@ -108,11 +108,14 @@ use-system-accent=true
 
 [vitals]
 alphabetize=true
-fixed-widths=true
-hot-sensors=['_memory_usage_', '_processor_usage_', '__network-rx_max__']
+fixed-widths=false
+hide-icons=false
+hot-sensors=['_memory_usage_', '_processor_usage_', '__network-rx_max__', '__temperature_avg__']
 icon-style=0
 menu-centered=true
 show-battery=true
 show-fan=true
+show-gpu=false
 show-temperature=true
 show-voltage=true
+use-higher-precision=false
