@@ -136,6 +136,7 @@ self-cleanup() {
 }
 
 # Preview all ANSI colours
+# Use -a or --all to display all colours
 colours() {
   # Starting from colour 22, colours cluster into groups of 6
   # There are 234 colours, leading to 39 groups of 6
@@ -149,12 +150,18 @@ colours() {
   WIDTH=96
   ((WIDTH > COLUMNS)) && WIDTH="$COLUMNS"
 
+  # Clear colors before exit
+  trap 'tput sgr0' EXIT
+
   (
     for i in {0..21}; do
       tput setaf "$i"
       echo "Colour $i"
     done
   ) | column --output-width "$WIDTH" --use-spaces 2
+
+  # Stop here if none of ('-a', '--all') flags are set
+  [[ " $* " != *" -a "* && " $* " != *" --all "* ]] && return;
 
   echo
 
