@@ -20,10 +20,10 @@ alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload"
 alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always {}")'
 
 # Bookmarks
-alias jd="jump"       # Jump [to] directory
-alias bm="bookmark"   # Bookmark directory
-alias dm="deletemark" # Delete mark
-alias sm="showmarks"  # Show marks
+alias jd="jump"           # Jump [to] directory
+alias bm="jumper mark"    # Bookmark directory
+alias dm="jumper delete"  # Bookmark directory
+alias sm="jumper list"    # Show marks
 
 # Python
 alias python="python3"
@@ -194,6 +194,7 @@ ceval mise completion zsh
 ceval just --completions zsh
 ceval gum completion zsh
 ceval kv completion zsh
+ceval jumper init
 
 # Delete function defintion
 unfunction ceval
@@ -216,12 +217,7 @@ if [ ! -d "$ZSH" ]; then
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
-# Install zshmarks
-if [ ! -d "$ZSH/custom/plugins/zshmarks" ]; then
-  git clone https://github.com/jocelynmallon/zshmarks.git "$ZSH/custom/plugins/zshmarks"
-fi
-
-plugins=(zshmarks docker starship fzf git golang node bun python)
+plugins=(docker starship fzf git golang node bun python)
 
 # Source oh-my-zsh
 source "$ZSH/oh-my-zsh.sh"
