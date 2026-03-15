@@ -20,10 +20,8 @@ alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload"
 alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always {}")'
 
 # Bookmarks
+alias jp="jumper"
 alias jd="jump"           # Jump [to] directory
-alias bm="jumper mark"    # Bookmark directory
-alias dm="jumper delete"  # Bookmark directory
-alias sm="jumper list"    # Show marks
 
 # Python
 alias python="python3"
