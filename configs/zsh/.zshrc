@@ -21,7 +21,7 @@ alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always
 
 # Bookmarks
 alias jp="jumper"
-alias jd="jump"           # Jump [to] directory
+alias jd="jump" # Jump [to] directory
 
 # Python
 alias python="python3"
@@ -158,7 +158,7 @@ colours() {
   ) | column --output-width "$WIDTH" --use-spaces 2
 
   # Stop here if none of ('-a', '--all') flags are set
-  [[ " $* " != *" -a "* && " $* " != *" --all "* ]] && return;
+  [[ " $* " != *" -a "* && " $* " != *" --all "* ]] && return
 
   echo
 
@@ -194,9 +194,48 @@ notes() {
 
 alarm() {
   for i in {0..2}; do
-    echo -n '\a'
+    printf '\a'
     sleep .15s
   done
+}
+
+# Stop watch
+sw() {
+  local FILE="${XDG_STATE_HOME:-$HOME/.local/state}/stopwatch"
+  mkdir -p "$(dirname "$FILE")"
+
+  case "$1" in
+  start)
+    date +%s >"$FILE"
+    echo "Started at $(date)"
+    ;;
+  stop)
+    if [[ ! -f "$FILE" ]]; then
+      return
+    fi
+
+    start=$(cat "$FILE")
+    now=$(date +%s)
+    diff=$((now - start))
+    printf "Elapsed: %02d:%02d:%02d\n" $((diff / 3600)) $(((diff % 3600) / 60)) $((diff % 60))
+
+    rm -f "$FILE"
+    ;;
+  "" | elapsed)
+    if [[ ! -f "$FILE" ]]; then
+      echo "No stopwatch running. Use: sw start"
+      return 1
+    fi
+
+    start=$(cat "$FILE")
+    now=$(date +%s)
+    diff=$((now - start))
+    printf "Elapsed: %02d:%02d:%02d\n" $((diff / 3600)) $(((diff % 3600) / 60)) $((diff % 60))
+    ;;
+  *)
+    echo "Usage: sw [start|stop|elapsed]"
+    ;;
+  esac
 }
 
 # === Setup ===
