@@ -171,6 +171,23 @@ colours() {
   ) | column --output-width "$WIDTH" --use-spaces 2
 }
 
+# Print text in give colour
+coloured() {
+  if [[ "$#" < "2" ]]; then
+    echo "Usage: coloured <colour> <text...>" >&2
+    return 1
+  fi
+
+  colour="$1"
+  shift
+  text="$@"
+
+  tput setaf "$colour"
+  echo "$text"
+  tput sgr0
+}
+alias clr='coloured'
+
 notes() {
   mkdir -p "$NOTES_DIR"
   (cd "$NOTES_DIR" && nvim main.md)
