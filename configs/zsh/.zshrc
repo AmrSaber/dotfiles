@@ -87,6 +87,12 @@ silent() {
   "$@" &>/dev/null
 }
 
+# Fails if given command does not exist
+exists() {
+  command -v "$1" &>/dev/null
+  return "$?"
+}
+
 start-renamed() {
   # In Zsh trap EXIT works with functions returns; similar to trap RETURN in bash
   trap 'zellij ac undo-rename-pane' EXIT
@@ -210,7 +216,7 @@ eval "$(just --completions zsh)"
 eval "$(kv completion zsh)"
 eval "$(jumper init)"
 
-command -v gum &>/dev/null && eval "$(gum completion zsh)"
+exists gum && eval "$(gum completion zsh)"
 
 # Load local config if present
 [ -f ~/.zsh_local ] && source "$HOME/.zsh_local"
@@ -219,7 +225,7 @@ command -v gum &>/dev/null && eval "$(gum completion zsh)"
 ulimit -n 4096
 
 # Make sure starship is installed
-which starship &>/dev/null || brew install starship
+exists starship || brew install starship
 
 # === Oh-My-Zsh Setup ===
 # Path to oh-my-zsh installation
@@ -238,7 +244,7 @@ source "$ZSH/oh-my-zsh.sh"
 # === Post-Setup ===
 
 # Needs to be here otherwise it is overridden by oh-my-zsh
-if which eza &>/dev/null; then
+if exists eza; then
   alias ls="eza --icons=always --group-directories-first"
   alias la="ls -a"
   alias ll="la -lh --git"
