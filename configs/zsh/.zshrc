@@ -59,7 +59,7 @@ zd() {
   if [ -z "$list" ] || echo "$list" | grep -ivq 'current'; then
     zellij a -c "$DEVICE_NAME"
   elif [ -z "$quiet" ]; then
-    gum style --foreground 03 "Already inside zellij!" >/dev/stderr
+    coloured 3 "Already inside zellij!" >/dev/stderr
   fi
 }
 
@@ -68,20 +68,13 @@ wait-for() {
   local task=$1
 
   if ! pgrep "$task" >/dev/null; then
-    gum style --foreground 3 "Task '$task' is not running"
+    coloured 3 "Task '$task' is not running"
     return 1
   fi
 
   while pgrep "$task" >/dev/null; do
     sleep 1s
   done
-}
-
-# conditional-eval: conditionally evaluates given command if tool exists
-ceval() {
-  if which "$1" &>/dev/null; then
-    eval "$("$@")"
-  fi
 }
 
 # Runs command then exits
@@ -114,7 +107,7 @@ self-cleanup() {
 
   # Check if there's content after the marker
   if [ "$(wc -l <"$file_name")" -gt "$last_line" ]; then
-    gum style --foreground 3 "[.zshrc self-cleanup] Removing appended content:"
+    coloured 3 "[.zshrc self-cleanup] Removing appended content:"
 
     # Print everything after the last occurrence
     tail -n +$((last_line + 1)) "$file_name"
@@ -128,7 +121,7 @@ self-cleanup() {
     mv "$temp_file" "$file_name"
 
     echo
-    gum style --foreground 3 "[.zshrc self-cleanup] Reloading zsh..."
+    coloured 3 "[.zshrc self-cleanup] Reloading zsh..."
     omz reload
   fi
 }
@@ -209,17 +202,15 @@ compdef _precommand only
 compdef _precommand silent
 
 [ -f $BREW_PREFIX/bin/brew ] && eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
-ceval mise activate zsh
+eval "$(mise activate zsh)"
 
 # Auto completion
-ceval mise completion zsh
-ceval just --completions zsh
-ceval gum completion zsh
-ceval kv completion zsh
-ceval jumper init
+eval "$(mise completion zsh)"
+eval "$(just --completions zsh)"
+eval "$(kv completion zsh)"
+eval "$(jumper init)"
 
-# Delete function defintion
-unfunction ceval
+command -v gum &>/dev/null && eval "$(gum completion zsh)"
 
 # Load local config if present
 [ -f ~/.zsh_local ] && source "$HOME/.zsh_local"
