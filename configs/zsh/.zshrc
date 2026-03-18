@@ -176,6 +176,13 @@ notes() {
   (cd "$NOTES_DIR" && nvim main.md)
 }
 
+alarm() {
+  for i in {0..2}; do
+    echo -n '\a'
+    sleep .15s
+  done
+}
+
 # === Setup ===
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
