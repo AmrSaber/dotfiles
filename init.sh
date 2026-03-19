@@ -45,14 +45,17 @@ brew_path="/home/linuxbrew/.linuxbrew/bin/brew"
 # Activate brew
 eval "$("$brew_path" shellenv)"
 
+# Add personal tap
+brew tap amrsaber/tap
+
 # Install needed brew packages
 brew_packages=(
-  neovim just mise zellij stow gum amrsaber/tap/kv jq starship # Core tools
-  bat fd ripgrep eza                                           # Modern alternatives
-  tlrc fzf yazi yq                                             # Quality of life
-  neofetch fastfetch btop shellcheck                           # Extras
-  ffmpeg sevenzip poppler resvg imagemagick                    # Yazi tool-kit to provide previews
-  go python                                                    # Programming languages
+  neovim just mise zellij stow gum kv jumper jq starship # Core tools
+  bat fd ripgrep eza                                     # Modern alternatives
+  tlrc fzf yazi yq                                       # Quality of life
+  neofetch fastfetch btop shellcheck                     # Extras
+  ffmpeg sevenzip poppler resvg imagemagick              # Yazi tool-kit to provide previews
+  go python                                              # Programming languages
 )
 
 brew_casks=(
