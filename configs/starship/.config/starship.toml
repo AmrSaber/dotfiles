@@ -12,6 +12,7 @@ $line_break\
 $directory\
 (\\($git_branch\
 $git_status\\))\
+$bun$nodejs$golang$rust$deno$zig$lua$ruby$php$java$swift$kotlin$dotnet$elixir$erlang$gleam$ocaml$scala$haskell\
 \
 $line_break\
 \
@@ -72,3 +73,61 @@ format = '[\[$virtualenv\]]($style)'
 style = 'white'
 detect_extensions = []
 detect_files = []
+
+# Language modules — [Name version] in each language's default color
+[bun]
+format = ' [\[Bun $version\]]($style)'
+
+[nodejs]
+format = ' [\[Node $version\]]($style)'
+
+[golang]
+format = ' [\[Go $version\]]($style)'
+
+[rust]
+format = ' [\[Rust $version\]]($style)'
+
+[deno]
+format = ' [\[Deno $version\]]($style)'
+
+[zig]
+format = ' [\[Zig $version\]]($style)'
+
+[lua]
+format = ' [\[Lua $version\]]($style)'
+
+[ruby]
+format = ' [\[Ruby $version\]]($style)'
+
+[php]
+format = ' [\[PHP $version\]]($style)'
+
+[java]
+format = ' [\[Java $version\]]($style)'
+
+[swift]
+format = ' [\[Swift $version\]]($style)'
+
+[kotlin]
+format = ' [\[Kotlin $version\]]($style)'
+
+[dotnet]
+format = ' [\[.NET $version\]]($style)'
+
+[elixir]
+format = ' [\[Elixir $version\]]($style)'
+
+[erlang]
+format = ' [\[Erlang $version\]]($style)'
+
+[gleam]
+format = ' [\[Gleam $version\]]($style)'
+
+[ocaml]
+format = ' [\[OCaml $version\]]($style)'
+
+[scala]
+format = ' [\[Scala $version\]]($style)'
+
+[haskell]
+format = ' [\[Haskell $version\]]($style)'
