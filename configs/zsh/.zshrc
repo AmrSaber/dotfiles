@@ -51,7 +51,7 @@ export NOTES_DIR="$HOME/notes"
 # Start zellij session if not already inside one
 zd() {
   # Set quiet variable if '-q' flag is sent
-  echo "$@" | grep -Eq '\-.*q' && local quiet=1
+  [[ " $* " == *" -q "* ]] && local quiet=1
 
   local list
   list=$(zellij ls 2>/dev/null)
