@@ -76,58 +76,58 @@ detect_files = []
 
 # Language modules — [Name version] in each language's default color
 [bun]
-format = ' [\[Bun $version\]]($style)'
+format = ' [\[Bun( $version)\]]($style)'
 
 [nodejs]
-format = ' [\[Node $version\]]($style)'
+format = ' [\[Node( $version)\]]($style)'
 
 [golang]
-format = ' [\[Go $version\]]($style)'
+format = ' [\[Go( $version)\]]($style)'
 
 [rust]
-format = ' [\[Rust $version\]]($style)'
+format = ' [\[Rust( $version)\]]($style)'
 
 [deno]
-format = ' [\[Deno $version\]]($style)'
+format = ' [\[Deno( $version)\]]($style)'
 
 [zig]
-format = ' [\[Zig $version\]]($style)'
+format = ' [\[Zig( $version)\]]($style)'
 
 [lua]
-format = ' [\[Lua $version\]]($style)'
+format = ' [\[Lua( $version)\]]($style)'
 
 [ruby]
-format = ' [\[Ruby $version\]]($style)'
+format = ' [\[Ruby( $version)\]]($style)'
 
 [php]
-format = ' [\[PHP $version\]]($style)'
+format = ' [\[PHP( $version)\]]($style)'
 
 [java]
-format = ' [\[Java $version\]]($style)'
+format = ' [\[Java( $version)\]]($style)'
 
 [swift]
-format = ' [\[Swift $version\]]($style)'
+format = ' [\[Swift( $version)\]]($style)'
 
 [kotlin]
-format = ' [\[Kotlin $version\]]($style)'
+format = ' [\[Kotlin( $version)\]]($style)'
 
 [dotnet]
-format = ' [\[.NET $version\]]($style)'
+format = ' [\[.NET( $version)\]]($style)'
 
 [elixir]
-format = ' [\[Elixir $version\]]($style)'
+format = ' [\[Elixir( $version)\]]($style)'
 
 [erlang]
-format = ' [\[Erlang $version\]]($style)'
+format = ' [\[Erlang( $version)\]]($style)'
 
 [gleam]
-format = ' [\[Gleam $version\]]($style)'
+format = ' [\[Gleam( $version)\]]($style)'
 
 [ocaml]
-format = ' [\[OCaml $version\]]($style)'
+format = ' [\[OCaml( $version)\]]($style)'
 
 [scala]
-format = ' [\[Scala $version\]]($style)'
+format = ' [\[Scala( $version)\]]($style)'
 
 [haskell]
-format = ' [\[Haskell $version\]]($style)'
+format = ' [\[Haskell( $version)\]]($style)'
