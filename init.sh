@@ -93,9 +93,13 @@ fi
 
 # If not in SSH connection nor in headless mode
 if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
-  # Install kitty
-  command -v nala &>/dev/null && sudo nala install -y kitty
-  command -v dnf &>/dev/null && sudo dnf install -y kitty
+  # Install ghostty
+  command -v nala &>/dev/null && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+
+  if command -v dnf &>/dev/null; then
+    sudo dnf copr enable -y scottames/ghostty
+    sudo dnf install -y ghostty
+  fi
 
   # === Install browsers ===
 
