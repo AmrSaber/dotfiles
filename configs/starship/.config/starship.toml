@@ -1,7 +1,7 @@
 add_newline = false
 
 format = """
-$python\
+${custom.venv}\
 $hostname\
 $container\
 $fill\
@@ -12,7 +12,7 @@ $line_break\
 $directory\
 (\\($git_branch\
 $git_status\\))\
-$bun$nodejs$golang$rust$deno$zig$lua$ruby$php$java$swift$kotlin$dotnet$elixir$erlang$gleam$ocaml$scala$haskell\
+${custom.python}$bun$nodejs$golang$rust$deno$zig$lua$ruby$php$java$swift$kotlin$elixir$erlang$gleam$ocaml$scala$haskell\
 \
 $line_break\
 \
@@ -68,11 +68,17 @@ min_time = 1_000
 format = '[\[$status( $common_meaning)(; SIG$signal_name $signal_number)\]]($style)'
 disabled = false
 
-[python]
-format = '[\[$virtualenv\]]($style)'
-style = 'white'
-detect_extensions = []
-detect_files = []
+[custom.venv]
+command = 'printf "[%s]" "$(basename $VIRTUAL_ENV)"'
+when = '[[ -n "$VIRTUAL_ENV" ]]'
+format = '[$output]($style)'
+style = "white"
+
+[custom.python]
+command = '{python --version 2>/dev/null || python3 --version 2>/dev/null || python2 --version 2>/dev/null } |cut -d " " -f 2'
+when = '[[ -f pyproject.toml || -f requirements.txt || -f .python-version ]] || ls *.py 2>/dev/null | grep -q .'
+format = ' [\[Python( $output)\]]($style)'
+style = 'yellow bold'
 
 # Language modules — [Name version] in each language's default color
 [bun]
@@ -110,9 +116,6 @@ format = ' [\[Swift( $version)\]]($style)'
 
 [kotlin]
 format = ' [\[Kotlin( $version)\]]($style)'
-
-[dotnet]
-format = ' [\[.NET( $version)\]]($style)'
 
 [elixir]
 format = ' [\[Elixir( $version)\]]($style)'
