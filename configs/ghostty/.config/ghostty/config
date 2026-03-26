@@ -1,0 +1,13 @@
+# Theme
+background-opacity = 0.85
+
+# Behaviour
+confirm-close-surface = false
+mouse-hide-while-typing = true
+
+# Shell integration
+shell-integration = zsh
+shell-integration-features = ssh-terminfo,ssh-env,sudo,path,title,no-cursor
+
+# Mac OS
+macos-option-as-alt = left
