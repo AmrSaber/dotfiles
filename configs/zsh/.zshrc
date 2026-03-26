@@ -185,7 +185,7 @@ coloured() {
   echo "$text"
   tput sgr0
 }
-alias clr='coloured'
+alias clrd='coloured'
 
 notes() {
   mkdir -p "$NOTES_DIR"
