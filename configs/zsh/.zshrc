@@ -172,14 +172,14 @@ colours() {
 
 # Print text in give colour
 coloured() {
-  if [[ "$#" < "2" ]]; then
+  if [[ "$#" -lt "2" ]]; then
     echo "Usage: coloured <colour> <text...>" >&2
     return 1
   fi
 
   colour="$1"
   shift
-  text="$@"
+  text="$*"
 
   tput setaf "$colour"
   echo "$text"
