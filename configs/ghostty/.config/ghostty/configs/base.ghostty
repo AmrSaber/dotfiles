@@ -12,3 +12,6 @@ shell-integration-features = ssh-terminfo,ssh-env,sudo,path,title,no-cursor
 
 # Mac OS
 macos-option-as-alt = left
+
+# GTK specific
+gtk-titlebar-hide-when-maximized = true
