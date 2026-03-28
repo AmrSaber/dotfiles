@@ -1,9 +1,8 @@
 # Theme
 background-opacity = 0.85
-font-family = UbuntuMono Nerd Font Mono
-font-size = 12
 
 # Behaviour
+maximize = true
 confirm-close-surface = false
 mouse-hide-while-typing = true
 

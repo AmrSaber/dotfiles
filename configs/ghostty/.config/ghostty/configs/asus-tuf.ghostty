@@ -1,0 +1,5 @@
+config-file = base.ghostty
+
+# Font stuff
+font-family = UbuntuMono Nerd Font Mono
+font-size = 12
