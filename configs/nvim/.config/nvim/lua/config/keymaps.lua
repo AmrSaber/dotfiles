@@ -34,3 +34,30 @@ keymap.set("v", "p", '"_dP')
 -- Open mini.files through <leader>e
 keymap.set("n", "<leader>e", "<leader>fm", { remap = true, desc = "Open mini.files" })
 keymap.set("n", "<leader>E", "<leader>fm", { remap = true, desc = "Open mini.files (cwd)" })
+
+-- Yank operations
+wk.add({ { "<leader>y", group = "Yank", desc = "Yank operations" } })
+keymap.set("v", "<leader>yr", function()
+  vim.cmd("normal! ") -- Exit visual mode
+
+  local start_line = vim.fn.line("'<")
+  local end_line = vim.fn.line("'>")
+  local filepath = vim.fn.expand("%")
+  local ref = string.format("@%s#L%d-%d", filepath, start_line, end_line)
+  vim.fn.setreg("+", ref)
+  vim.print("Copied: " .. ref)
+end, { desc = "Yank range reference" })
+
+keymap.set("n", "<leader>yl", function()
+  local line_num = vim.fn.line(".")
+  local filepath = vim.fn.expand("%")
+  local ref = string.format("@%s#L%d", filepath, line_num)
+  vim.fn.setreg("+", ref)
+  print("Copied: " .. ref)
+end, { desc = "Yank line reference" })
+
+keymap.set("n", "<leader>yp", function()
+  local filepath = vim.fn.expand("%")
+  vim.fn.setreg("+", filepath)
+  print("Copied: " .. filepath)
+end, { desc = "Yank buffer path" })
