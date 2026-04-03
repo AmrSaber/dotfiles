@@ -36,7 +36,7 @@ keymap.set("n", "<leader>e", "<leader>fm", { remap = true, desc = "Open mini.fil
 keymap.set("n", "<leader>E", "<leader>fm", { remap = true, desc = "Open mini.files (cwd)" })
 
 -- Yank operations
-wk.add({ { "<leader>y", group = "Yank", desc = "Yank operations" } })
+wk.add({ { "<leader>y", group = "Yank", desc = "Yank operations", mode = { "n", "v" } } })
 keymap.set("v", "<leader>yr", function()
   vim.cmd("normal! ") -- Exit visual mode
 
