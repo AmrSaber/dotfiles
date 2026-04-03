@@ -67,12 +67,12 @@ zd() {
 wait-for() {
   local task=$1
 
-  if ! pgrep "$task" >/dev/null; then
+  if ! pgrep -f "$task" >/dev/null; then
     coloured 3 "Task '$task' is not running"
     return 1
   fi
 
-  while pgrep "$task" >/dev/null; do
+  while pgrep -f "$task" >/dev/null; do
     sleep 1s
   done
 }
