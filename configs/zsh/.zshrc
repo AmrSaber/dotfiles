@@ -199,44 +199,23 @@ alarm() {
   done
 }
 
-# Stop watch
-sw() {
-  local FILE="${XDG_STATE_HOME:-$HOME/.local/state}/stopwatch"
-  mkdir -p "$(dirname "$FILE")"
+# Create a temp directory and move to it
+# jt -> jump temp
+jump-temp() {
+  local dir_name;
 
-  case "$1" in
-  start)
-    date +%s >"$FILE"
-    echo "Started at $(date)"
-    ;;
-  stop)
-    if [[ ! -f "$FILE" ]]; then
-      return
-    fi
+  if (("$#" == 0)); then
+    dir_name="$(mktemp --tmpdir=/tmp --directory)"
+  elif (("$#" == 1)); then
+    dir_name="$(mktemp --tmpdir=/tmp --directory "$1"-XXXXX)"
+  else
+    echo "Usage: jt [dir-name]" >&2
+    return 1
+  fi
 
-    start=$(cat "$FILE")
-    now=$(date +%s)
-    diff=$((now - start))
-    printf "Elapsed: %02d:%02d:%02d\n" $((diff / 3600)) $(((diff % 3600) / 60)) $((diff % 60))
-
-    rm -f "$FILE"
-    ;;
-  "" | elapsed)
-    if [[ ! -f "$FILE" ]]; then
-      echo "No stopwatch running. Use: sw start"
-      return 1
-    fi
-
-    start=$(cat "$FILE")
-    now=$(date +%s)
-    diff=$((now - start))
-    printf "Elapsed: %02d:%02d:%02d\n" $((diff / 3600)) $(((diff % 3600) / 60)) $((diff % 60))
-    ;;
-  *)
-    echo "Usage: sw [start|stop|elapsed]"
-    ;;
-  esac
+  cd "$dir_name"
 }
+alias jt="jump-temp"
 
 # === Setup ===
 # Setup zsh auto completion
