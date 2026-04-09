@@ -201,9 +201,9 @@ alarm() {
 jump-temp() {
   local dir_name
 
-  if (("$#" == 0)); then
+  if (($# == 0)); then
     dir_name="$(mktemp --tmpdir=/tmp --directory)"
-  elif (("$#" == 1)); then
+  elif (($# == 1)); then
     dir_name="$(mktemp --tmpdir=/tmp --directory "$1"-XXXXX)"
   else
     echo "Usage: jt [dir-name]" >&2
