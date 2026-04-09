@@ -9,11 +9,9 @@ alias cat="bat --plain"
 
 # Short-cuts
 alias dc="docker compose"
-alias j="just"
-alias z="zellij"
 alias ff="fastfetch"
 
-# Nvim
+# Neovim
 alias v="nvim"
 alias vr='nvim -c "cd $(git rev-parse --show-toplevel)"'
 alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload"
@@ -31,10 +29,10 @@ alias py-activate="source .venv/bin/activate"
 alias py-deactivate="deactivate"
 
 # Utils
-alias dotenv='export $(cat .evn | xargs)'
-alias scripts='jq ".scripts" package.json'
+alias dotenv='export $(cat .evn | xargs)'      # Parse and set .env file
+alias scripts='jq ".scripts" package.json'     # Print "scripts" section from package.json
 alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
-alias open='xdg-open'
+alias open='xdg-open'                          # Open file with default app
 
 # === Exports ===
 DEVICE_NAME="$(hostname)"
@@ -200,9 +198,8 @@ alarm() {
 }
 
 # Create a temp directory and move to it
-# jt -> jump temp
 jump-temp() {
-  local dir_name;
+  local dir_name
 
   if (("$#" == 0)); then
     dir_name="$(mktemp --tmpdir=/tmp --directory)"
@@ -213,7 +210,7 @@ jump-temp() {
     return 1
   fi
 
-  cd "$dir_name"
+  cd "$dir_name" || exit 1
 }
 alias jt="jump-temp"
 
