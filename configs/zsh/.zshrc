@@ -229,7 +229,7 @@ eval "$(mise activate zsh)"
 eval "$(mise completion zsh)"
 eval "$(just --completions zsh)"
 eval "$(kv completion zsh)"
-eval "$(jumper init)"
+eval "$(jumper init zsh)"
 
 exists gum && eval "$(gum completion zsh)"
 
@@ -248,7 +248,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh if not installed
 if [ ! -d "$ZSH" ]; then
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | KEEP_ZSHRC=yes RUNZSH=no sh
 fi
 
 plugins=(docker starship fzf git golang node bun python)

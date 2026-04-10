@@ -40,12 +40,14 @@ fi
 
 # Install brew if not installed
 brew_path="/home/linuxbrew/.linuxbrew/bin/brew"
-[ -f "$brew_path" ] || NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+if ! [ -f "$brew_path" ]; then
+  curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash
+fi
 
 # Activate brew
 eval "$("$brew_path" shellenv)"
 
-# Add personal tap
+# Add personal homebrew tap
 brew tap amrsaber/tap
 
 # Install needed brew packages
