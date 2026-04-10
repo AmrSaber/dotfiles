@@ -1,41 +1,16 @@
 #!/usr/bin/env bash
 
+SCRIPTS_DIR="$(dirname "${BASH_SOURCE[0]}")/scripts"
+
 # Termux has totally different setup
 if [ -n "$TERMUX_VERSION" ]; then
-  packages=(
-    curl git openssh zsh neovim just zellij stow gum jq starship # Core tools
-    bat fd ripgrep eza zoxide yazi                               # Modern alternatives
-  )
-
-  nala install "${packages[@]}"
-
-  # Install grun, glibc-wrapper. This must be on 2 steps
-  nala install glibc-repo
-  nala install glibc-runner
-
-  # Stow all the configurations
-  if [ -z "${NO_STOW:-}" ]; then
-    rm ~/.zshrc
-    just stow-all
-  fi
-
+  bash "$SCRIPTS_DIR/termux.sh"
   exit 0
 fi
 
-# Fedora setup
-if command -v dnf &>/dev/null; then
-  sudo dnf upgrade -y
-  sudo dnf install -y curl git zsh ps @development-tools hostname # Essentials - ps is required by brew
-fi
-
-# If apt is installed: update then use nala
-if command -v apt &>/dev/null; then
-  # Install nala if it does not exist
-  command -v nala &>/dev/null || sudo apt update && sudo apt install nala -y
-
-  # System update using nala, and install essential packages
-  sudo nala upgrade -y
-  sudo nala install -y curl git zsh build-essential # Essentials
+# System packages and OS-level setup (requires root or sudo)
+if [ -z "${NO_SYSTEM:-}" ]; then
+  sudo bash "$SCRIPTS_DIR/system.sh"
 fi
 
 # Install brew if not installed
@@ -91,32 +66,4 @@ fi
 if [ -z "${NO_STOW:-}" ]; then
   rm ~/.zshrc
   just stow-all
-fi
-
-# If not in SSH connection nor in headless mode
-if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
-  # Install ghostty
-  command -v nala &>/dev/null && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
-
-  if command -v dnf &>/dev/null; then
-    sudo dnf copr enable -y scottames/ghostty
-    sudo dnf install -y ghostty
-  fi
-
-  # === Install browsers ===
-
-  # Firefox & Chromium
-  if command -v dnf &>/dev/null; then
-    sudo dnf install -y chromium firefox
-  elif command -v snap &>/dev/null; then
-    command -v nala &>/dev/null && sudo nala remove firefox # Usually outdated
-    sudo snap install chromium firefox
-  fi
-
-  # Vivaldi
-  if command -v flatpak &>/dev/null; then
-    flatpak install -y vivaldi
-  elif command -v snap &>/dev/null; then
-    sudo snap install vivaldi
-  fi
 fi
