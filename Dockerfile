@@ -22,6 +22,7 @@ RUN mkdir -p /home/linuxbrew/.linuxbrew
 RUN chown -R user:user /home/linuxbrew
 
 USER user
+ENV SHELL=/bin/zsh
 
 # User setup — system already done above
 RUN NO_SYSTEM=1 HEADLESS=1 NO_STOW=1 ./init.sh
