@@ -1,7 +1,14 @@
 FROM fedora:latest
 
 # Setup non-root user
-RUN useradd -m -s /bin/zsh user && echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN dnf install -y zsh
+RUN useradd -m -s /bin/zsh user
+RUN passwd -d user
+RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# pre-create brew prefix so user can install into it
+RUN mkdir -p /home/linuxbrew/.linuxbrew
+RUN chown -R user:user /home/linuxbrew
 
 USER user
 WORKDIR /home/user/.dotfiles
