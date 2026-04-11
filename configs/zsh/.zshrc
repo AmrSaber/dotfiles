@@ -222,25 +222,26 @@ autoload -Uz compinit && compinit
 compdef _precommand only
 compdef _precommand silent
 
-[ -f $BREW_PREFIX/bin/brew ] && eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
-eval "$(mise activate zsh)"
+if [[ -f $BREW_PREFIX/bin/brew ]]; then
+  # Increase open files limit for brew updates
+  ulimit -n 4096
 
-# Auto completion
-eval "$(mise completion zsh)"
-eval "$(just --completions zsh)"
-eval "$(kv completion zsh)"
-eval "$(jumper init zsh)"
+  eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
+  eval "$(mise activate zsh)"
 
-exists gum && eval "$(gum completion zsh)"
+  # Auto completion
+  eval "$(mise completion zsh)"
+  eval "$(just --completions zsh)"
+  eval "$(kv completion zsh)"
+  exists gum && eval "$(gum completion zsh)"
+
+  eval "$(jumper init zsh)"
+else
+  coloured 1 "Brew not found!" >&2
+fi
 
 # Load local config if present
-[ -f ~/.zsh_local ] && source "$HOME/.zsh_local"
-
-# Increase open files limit for brew updates
-ulimit -n 4096
-
-# Make sure starship is installed
-exists starship || brew install starship
+[[ -f ~/.zsh_local ]] && source "$HOME/.zsh_local"
 
 # === Oh-My-Zsh Setup ===
 # Path to oh-my-zsh installation
@@ -253,7 +254,7 @@ source "$ZSH/oh-my-zsh.sh"
 
 # === Post-Setup ===
 
-# Needs to be here otherwise it is overridden by oh-my-zsh
+# Needs to be here lest it is overridden by oh-my-zsh
 if exists eza; then
   alias ls="eza --icons=always --group-directories-first"
   alias la="ls -a"
