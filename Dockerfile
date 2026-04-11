@@ -33,8 +33,7 @@ RUN rm -f ~/.zshrc
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && just stow-all
 
 # Trigger first-run zsh setup (installs oh-my-zsh)
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && zsh -i -c exit
-RUN zsh -c 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && source ~/.zshrc'
+RUN zsh -c 'source ~/.zshrc'
 
 WORKDIR /home/user
 
