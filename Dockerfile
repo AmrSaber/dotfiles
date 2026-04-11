@@ -32,9 +32,6 @@ COPY --chown=user . .
 RUN rm -f ~/.zshrc
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && just stow-all
 
-# Trigger first-run zsh setup (installs oh-my-zsh)
-RUN zsh -c 'source ~/.zshrc'
-
 WORKDIR /home/user
 
 CMD ["zsh"]

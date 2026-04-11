@@ -246,11 +246,6 @@ exists starship || brew install starship
 # Path to oh-my-zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
-# Install oh-my-zsh if not installed
-if [ ! -d "$ZSH" ]; then
-  curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | KEEP_ZSHRC=yes RUNZSH=no sh
-fi
-
 plugins=(docker starship fzf git golang node bun python)
 
 # Source oh-my-zsh

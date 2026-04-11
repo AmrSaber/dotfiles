@@ -62,8 +62,13 @@ if ! command -v bin &>/dev/null; then
   fi
 fi
 
+# Install oh-my-zsh if not installed
+if [[ ! -d "$ZSH" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | KEEP_ZSHRC=yes RUNZSH=no CHSH=yes sh
+fi
+
 # Stow all the configurations
 if [ -z "${NO_STOW:-}" ]; then
-  rm ~/.zshrc
+  rm -f ~/.zshrc
   just stow-all
 fi
