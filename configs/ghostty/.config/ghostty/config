@@ -3,6 +3,7 @@ background-opacity = 0.85
 
 # Behaviour
 maximize = true
+window-decoration = false
 confirm-close-surface = false
 mouse-hide-while-typing = true
 
@@ -12,9 +13,6 @@ shell-integration-features = ssh-terminfo,ssh-env,sudo,path,title,no-cursor
 
 # Mac OS
 macos-option-as-alt = left
-
-# GTK specific
-gtk-titlebar-hide-when-maximized = true
 
 # Optionally load custom config that is not git-tracked
 config-file=?custom-config
