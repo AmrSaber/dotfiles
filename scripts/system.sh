@@ -44,6 +44,8 @@ elif grep -iq ubuntu /etc/os-release; then
     nala remove firefox # Usually outdated
     snap install chromium firefox vivaldi
   fi
+elif [[ "$(uname -s)" == "Darwin" ]]; then
+  echo "MacOS detected, no system setup needed!"
 else
   echo "Unhandled OS to setup!" >&2
   exit 1
