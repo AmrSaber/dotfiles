@@ -222,11 +222,12 @@ autoload -Uz compinit && compinit
 compdef _precommand only
 compdef _precommand silent
 
-if [[ -f $BREW_PREFIX/bin/brew ]]; then
+if exists brew || [[ -f $BREW_PREFIX/bin/brew ]]; then
   # Increase open files limit for brew updates
   ulimit -n 4096
 
-  eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
+  # Guarded because MacOs has different setup
+  [[ -f $BREW_PREFIX/bin/brew ]] && eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
   eval "$(mise activate zsh)"
 
   # Auto completion
