@@ -6,46 +6,45 @@ if [ "$(id -u)" != "0" ]; then
   exit 1
 fi
 
-# Fedora setup
-if command -v dnf &>/dev/null; then
+is_headless() {
+  [[ -n "${SSH_CLIENT:-}" || -n "${HEADLESS:-}" ]]
+}
+
+if grep -iq fedora /etc/os-release; then
   dnf upgrade -y
-  dnf install -y curl git zsh ps @development-tools hostname # Essentials - ps is required by brew
-fi
 
-# If apt is installed: update then use nala
-if command -v apt &>/dev/null; then
+  packages=(
+    curl git zsh @development-tools flatpak # Essentials
+    ps                                      # Required by brew
+    hostname                                # Not found in some environments
+  )
+  if ! is_headless; then
+    dnf copr enable -y scottames/ghostty
+    packages+=(ghostty chromium firefox)
+  fi
+
+  dnf install -y "${packages[@]}"
+
+  is_headless || flatpak install -y vivaldi
+elif grep -iq ubuntu /etc/os-release; then
   # Install nala if it does not exist
-  command -v nala &>/dev/null || apt update && apt install nala -y
+  if ! command -v nala &>/dev/null; then
+    apt update
+    apt install nala -y
+  fi
 
-  # System update using nala, and install essential packages
   nala upgrade -y
   nala install -y curl git zsh build-essential # Essentials
-fi
 
-# If not in SSH connection nor in headless mode
-if [ -z "${SSH_CLIENT:-}" ] && [ -z "${HEADLESS:-}" ]; then
-  # Install ghostty
-  command -v nala &>/dev/null && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+  if ! is_headless; then
+    # Install ghostty
+    curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh | bash
 
-  if command -v dnf &>/dev/null; then
-    dnf copr enable -y scottames/ghostty
-    dnf install -y ghostty
+    # Browsers
+    nala remove firefox # Usually outdated
+    snap install chromium firefox vivaldi
   fi
-
-  # === Install browsers ===
-
-  # Firefox & Chromium
-  if command -v dnf &>/dev/null; then
-    dnf install -y chromium firefox
-  elif command -v snap &>/dev/null; then
-    command -v nala &>/dev/null && nala remove firefox # Usually outdated
-    snap install chromium firefox
-  fi
-
-  # Vivaldi
-  if command -v flatpak &>/dev/null; then
-    flatpak install -y vivaldi
-  elif command -v snap &>/dev/null; then
-    snap install vivaldi
-  fi
+else
+  echo "Unhandled OS to setup!" >&2
+  exit 1
 fi
