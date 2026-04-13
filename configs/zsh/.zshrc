@@ -264,6 +264,11 @@ if exists eza; then
   alias llt="ll --tree"
 fi
 
+# Re-source ghostty integration after oh-my-zsh, which clobbers it on reload
+if [[ -n $GHOSTTY_RESOURCES_DIR ]]; then
+  builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration"
+fi
+
 self-cleanup
 
 # === End ===
