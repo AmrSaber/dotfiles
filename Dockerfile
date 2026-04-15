@@ -1,6 +1,7 @@
 FROM fedora:latest
 
 # Setup non-root user
+RUN dnf install -y zsh
 RUN useradd -m -s /bin/zsh user
 RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 

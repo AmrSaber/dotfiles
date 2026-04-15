@@ -10,7 +10,7 @@ is_headless() {
   [[ -n "${SSH_CLIENT:-}" || -n "${HEADLESS:-}" ]]
 }
 
-if grep -iq fedora /etc/os-release; then
+if grep -iq fedora /etc/os-release &>/dev/null; then
   dnf upgrade -y
 
   packages=(
@@ -26,7 +26,7 @@ if grep -iq fedora /etc/os-release; then
   dnf install -y "${packages[@]}"
 
   is_headless || flatpak install -y vivaldi
-elif grep -iq ubuntu /etc/os-release; then
+elif grep -iq ubuntu /etc/os-release &>/dev/null; then
   # Install nala if it does not exist
   if ! command -v nala &>/dev/null; then
     apt update

@@ -38,7 +38,7 @@ alias open='xdg-open'                          # Open file with default app
 DEVICE_NAME="$(hostname)"
 export DEVICE_NAME
 
-export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
+export BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
 
 export EDITOR="nvim"
 export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
@@ -222,12 +222,11 @@ autoload -Uz compinit && compinit
 compdef _precommand only
 compdef _precommand silent
 
-if exists brew || [[ -f $BREW_PREFIX/bin/brew ]]; then
+if [[ -d $BREW_PREFIX ]]; then
   # Increase open files limit for brew updates
   ulimit -n 4096
 
-  # Guarded because MacOs has different setup
-  [[ -f $BREW_PREFIX/bin/brew ]] && eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
+  eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
   eval "$(mise activate zsh)"
 
   # Auto completion

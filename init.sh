@@ -9,18 +9,19 @@ if [ -n "$TERMUX_VERSION" ]; then
 fi
 
 # System packages and OS-level setup (requires root or sudo)
-if [ -z "${NO_SYSTEM:-}" ]; then
+# MacOS does not require system setup
+if [[ -z "${NO_SYSTEM:-}" && "$(uname -s)" != "Darwin" ]]; then
   sudo bash "$SCRIPTS_DIR/system.sh"
 fi
 
 # Install brew if not installed
-brew_path="/home/linuxbrew/.linuxbrew/bin/brew"
-if ! [ -f "$brew_path" ]; then
+brew_prefix="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
+if ! [[ -f "$brew_prefix"/bin/brew ]]; then
   curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash
 fi
 
 # Activate brew
-eval "$("$brew_path" shellenv)"
+eval "$("$brew_prefix"/bin/brew shellenv)"
 
 # Add personal homebrew tap
 brew tap amrsaber/tap
