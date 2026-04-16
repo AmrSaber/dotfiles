@@ -38,7 +38,8 @@ alias open='xdg-open'                          # Open file with default app
 DEVICE_NAME="$(hostname)"
 export DEVICE_NAME
 
-export BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
+BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
+export BREW_PREFIX
 
 export EDITOR="nvim"
 export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
@@ -170,7 +171,7 @@ colours() {
 
 # Print text in give colour
 coloured() {
-  if [[ "$#" -lt "2" ]]; then
+  if [[ "$" -lt "2" ]]; then
     echo "Usage: coloured <colour> <text...>" >&2
     return 1
   fi
@@ -214,6 +215,22 @@ jump-temp() {
 }
 alias jt="jump-temp"
 
+# Fuzzy-find jumper mark, then jump to it
+jump-find() {
+  mark="$(
+    jumper ls -o json |
+      jq -r '.[] | "\(.title) \(.path)"' |
+      column -t -s ' ' |
+      fzf |
+      cut -d ' ' -f 1
+  )"
+
+  if [[ -n "$mark" ]]; then
+    jump "$mark"
+  fi
+}
+alias jf="jump-find"
+
 # === Setup ===
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
@@ -226,7 +243,7 @@ if [[ -d $BREW_PREFIX ]]; then
   # Increase open files limit for brew updates
   ulimit -n 4096
 
-  eval "$($BREW_PREFIX/bin/brew shellenv)" # Activate homebrew
+  eval "$("$BREW_PREFIX"/bin/brew shellenv)" # Activate homebrew
   eval "$(mise activate zsh)"
 
   # Auto completion
