@@ -10,7 +10,23 @@ is_headless() {
   [[ -n "${SSH_CLIENT:-}" || -n "${HEADLESS:-}" ]]
 }
 
+# Setup sudo without password for active user
+# if not already setup
+setup-no-password-sudo() {
+  perm="$USER ALL=(ALL) NOPASSWD: ALL"
+
+  if ! grep -q "$perm" /etc/sudoers; then
+    {
+      echo ""
+      echo "# Sudo without password for user ($USER)"
+      echo "$perm"
+    } >>/etc/sudoers
+  fi
+}
+
 if grep -iq fedora /etc/os-release &>/dev/null; then
+  setup-no-password-sudo
+
   dnf upgrade -y
 
   packages=(
@@ -27,6 +43,8 @@ if grep -iq fedora /etc/os-release &>/dev/null; then
 
   is_headless || flatpak install -y vivaldi
 elif grep -iq ubuntu /etc/os-release &>/dev/null; then
+  setup-no-password-sudo
+
   # Install nala if it does not exist
   if ! command -v nala &>/dev/null; then
     apt update
