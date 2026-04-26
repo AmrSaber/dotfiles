@@ -11,13 +11,8 @@ if os.getenv("SSH_CLIENT") or os.getenv("SSH_TTY") then
       ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
     },
     paste = {
-      -- Kitty does not allow apps to read clipboard easily
-      ["+"] = function()
-        return {}, ""
-      end,
-      ["*"] = function()
-        return {}, ""
-      end,
+      ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
     },
   }
 end
