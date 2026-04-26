@@ -1,3 +1,7 @@
+if true then
+  return {}
+end
+
 return {
   "zaakiy/line-justice.nvim",
   dependencies = { "luukvbaal/statuscol.nvim", "lewis6991/gitsigns.nvim" },
