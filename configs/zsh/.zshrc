@@ -188,7 +188,7 @@ alias clrd='coloured'
 
 notes() {
   mkdir -p "$NOTES_DIR"
-  (cd "$NOTES_DIR" && nvim main.md)
+  (cd "$NOTES_DIR" && nvim)
 }
 
 alarm() {
