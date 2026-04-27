@@ -1,3 +1,15 @@
+local colors = {
+  fill = "#444444",
+  selected_bg = "#666666",
+  selected_fg = "#ffffff",
+}
+
+local selected_style = {
+  bg = colors.selected_bg,
+  fg = colors.selected_fg,
+  bold = true,
+}
+
 return {
   "akinsho/bufferline.nvim",
   keys = {
@@ -14,34 +26,34 @@ return {
       },
     },
     highlights = {
-      fill = { bg = "#444444" },
+      fill = { bg = colors.fill },
 
-      separator_visible = { fg = "#444444" },
-      separator = { fg = "#444444" },
-      separator_selected = { fg = "#444444", bg = "#666666" },
+      separator_visible = { fg = colors.fill },
+      separator = { fg = colors.fill },
+      separator_selected = { fg = colors.fill, bg = colors.selected_bg },
 
-      buffer_selected = { bg = "#666666" },
-      tab_selected = { bg = "#666666" },
-      close_button_selected = { bg = "#666666" },
-      numbers_selected = { bg = "#666666" },
-      modified_selected = { bg = "#666666" },
-      duplicate_selected = { bg = "#666666" },
-      indicator_selected = { bg = "#666666" },
-      pick_selected = { bg = "#666666" },
+      buffer_selected = selected_style,
+      tab_selected = selected_style,
+      close_button_selected = selected_style,
+      numbers_selected = selected_style,
+      modified_selected = selected_style,
+      duplicate_selected = selected_style,
+      indicator_selected = selected_style,
+      pick_selected = selected_style,
 
-      diagnostic_selected = { bg = "#666666" },
+      diagnostic_selected = selected_style,
 
-      hint_selected = { bg = "#666666" },
-      hint_diagnostic_selected = { bg = "#666666" },
+      hint_selected = selected_style,
+      hint_diagnostic_selected = selected_style,
 
-      error_selected = { bg = "#666666" },
-      error_diagnostic_selected = { bg = "#666666" },
+      error_selected = selected_style,
+      error_diagnostic_selected = selected_style,
 
-      warning_selected = { bg = "#666666" },
-      warning_diagnostic_selected = { bg = "#666666" },
+      warning_selected = selected_style,
+      warning_diagnostic_selected = selected_style,
 
-      info_selected = { bg = "#666666" },
-      info_diagnostic_selected = { bg = "#666666" },
+      info_selected = selected_style,
+      info_diagnostic_selected = selected_style,
     },
   },
 }
