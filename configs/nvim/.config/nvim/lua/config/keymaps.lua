@@ -61,3 +61,13 @@ keymap.set("n", "<leader>yp", function()
   vim.fn.setreg("+", filepath)
   print("Copied: " .. filepath)
 end, { desc = "Yank buffer path" })
+
+-- Markdown: toggle checklist item
+keymap.set("n", "<C-Space>", function()
+  local line = vim.api.nvim_get_current_line()
+  if line:match("%- %[x%]") then
+    vim.api.nvim_set_current_line((line:gsub("%- %[x%]", "- [ ]", 1)))
+  elseif line:match("%- %[ %]") then
+    vim.api.nvim_set_current_line((line:gsub("%- %[ %]", "- [x]", 1)))
+  end
+end, { desc = "Toggle markdown checkbox" })
