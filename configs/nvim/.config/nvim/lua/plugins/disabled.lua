@@ -11,4 +11,5 @@ return {
 
   { "nvim-treesitter/nvim-treesitter", enabled = enable_treesitter },
   { "nvim-treesitter/nvim-treesitter-textobjects", enabled = enable_treesitter },
+  { "windwp/nvim-ts-autotag", enabled = enable_treesitter },
 }
