@@ -257,6 +257,8 @@ else
   coloured 1 "Brew not found!" >&2
 fi
 
+exists bin && eval "$(bin completion zsh)"
+
 # Load local config if present
 [[ -f ~/.zsh_local ]] && source "$HOME/.zsh_local"
 
