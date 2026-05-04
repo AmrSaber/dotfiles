@@ -171,7 +171,7 @@ colours() {
 
 # Print text in give colour
 coloured() {
-  if [[ "$" -lt "2" ]]; then
+  if (("$" < 2)); then
     echo "Usage: coloured <colour> <text...>" >&2
     return 1
   fi
@@ -246,18 +246,20 @@ if [[ -d $BREW_PREFIX ]]; then
   eval "$("$BREW_PREFIX"/bin/brew shellenv)" # Activate homebrew
   eval "$(mise activate zsh)"
 
-  # Auto completion
-  eval "$(mise completion zsh)"
-  eval "$(just --completions zsh)"
-  eval "$(kv completion zsh)"
-  exists gum && eval "$(gum completion zsh)"
-
+  # Commands init
   eval "$(jumper init zsh)"
 else
   coloured 1 "Brew not found!" >&2
 fi
 
-exists bin && eval "$(bin completion zsh)"
+# Setup auto-completion for commands
+completion_commands=(mise kv gum bin opencode)
+for cmd in "${completion_commands[@]}"; do
+  exists "$cmd" && eval "$("$cmd" completion zsh)"
+done
+
+# Special case
+exists just && eval "$(just --completions zsh)"
 
 # Load local config if present
 [[ -f ~/.zsh_local ]] && source "$HOME/.zsh_local"
