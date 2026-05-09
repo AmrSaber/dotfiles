@@ -4,6 +4,7 @@
 [core]
 	pager = bat --plain
 [alias]
+	loog = log --oneline --graph
 	lol = log --oneline --graph --branches --tags
 	amend = commit --amend
   summary = show --summary
