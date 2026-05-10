@@ -4,7 +4,7 @@ return {
     local cmp = require("cmp")
 
     opts.completion = {
-      completeopt = "menu,menuone,noselect",
+      completeopt = "menu,menuone",
     }
 
     -- Only use built-in snippets, do not insert from LSP
@@ -26,12 +26,15 @@ return {
     }
 
     opts.mapping = vim.tbl_extend("force", opts.mapping or {}, {
+      ["<C-y>"] = cmp.mapping.confirm({ select = true }),
       ["<CR>"] = cmp.mapping(function(fallback)
-        if cmp.get_selected_entry() then
-          cmp.confirm({ select = false })
-        else
-          fallback()
-        end
+        fallback()
+      end, { "i", "s" }),
+      ["<S-CR>"] = cmp.mapping(function(fallback)
+        fallback()
+      end, { "i", "s" }),
+      ["<C-CR>"] = cmp.mapping(function(fallback)
+        fallback()
       end, { "i", "s" }),
     })
 
