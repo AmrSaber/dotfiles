@@ -5,7 +5,6 @@ local enable_treesitter = not system.is_al2()
 
 return {
   -- Permanently disabled
-  { "akinsho/bufferline.nvim", enabled = false },
   { "folke/noice.nvim", enabled = false },
   { "catppuccin/nvim", enabled = false },
   { "folke/tokyonight.nvim", enabled = false },
