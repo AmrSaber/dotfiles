@@ -43,7 +43,14 @@ keymap.set("v", "<leader>yr", function()
   local start_line = vim.fn.line("'<")
   local end_line = vim.fn.line("'>")
   local filepath = vim.fn.expand("%")
-  local ref = string.format("@%s#L%d-%d", filepath, start_line, end_line)
+
+  local ref = ""
+  if start_line ~= end_line then
+    ref = string.format("%s#L%d-%d", filepath, start_line, end_line)
+  else
+    ref = string.format("%s#L%d", filepath, start_line)
+  end
+
   vim.fn.setreg("+", ref)
   vim.print("Copied: " .. ref)
 end, { desc = "Yank range reference" })
@@ -51,7 +58,7 @@ end, { desc = "Yank range reference" })
 keymap.set("n", "<leader>yl", function()
   local line_num = vim.fn.line(".")
   local filepath = vim.fn.expand("%")
-  local ref = string.format("@%s#L%d", filepath, line_num)
+  local ref = string.format("%s#L%d", filepath, line_num)
   vim.fn.setreg("+", ref)
   print("Copied: " .. ref)
 end, { desc = "Yank line reference" })
