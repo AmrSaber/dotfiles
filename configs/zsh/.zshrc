@@ -290,6 +290,13 @@ if [[ -n $GHOSTTY_RESOURCES_DIR ]]; then
   builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration"
 fi
 
+# === Hooks ===
+export HERE
+_set_here() { HERE="$(basename "$(pwd)")"; }
+_set_here # Initialise
+
+chpwd_functions+=(_set_here)
+
 self-cleanup
 
 # === End ===
