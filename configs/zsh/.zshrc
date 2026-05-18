@@ -1,7 +1,8 @@
 # PATH updates
-export PATH="$PATH:$HOME/go/bin"               # Go bin
-export PATH="$PATH:$HOME/.cargo/bin"           # Cargo bin
-export PATH="$PATH:$HOME/.local/bin:$HOME/bin" # Local bin
+[[ "$PATH" =~ $HOME/go/bin ]] || PATH="$PATH:$HOME/go/bin"                             # Go bin
+[[ "$PATH" =~ $HOME/.cargo/bin ]] || PATH="$PATH:$HOME/.cargo/bin"                     # Cargo bin
+[[ "$PATH" =~ $HOME/.local/bin:$HOME/bin ]] || PATH="$PATH:$HOME/.local/bin:$HOME/bin" # Local bin
+export PATH
 
 # === Aliases ===
 # Renames
@@ -243,8 +244,8 @@ if [[ -d $BREW_PREFIX ]]; then
   # Increase open files limit for brew updates
   ulimit -n 4096
 
-  eval "$("$BREW_PREFIX"/bin/brew shellenv)" # Activate homebrew
-  eval "$(mise activate zsh)"
+  exists brew || eval "$("$BREW_PREFIX"/bin/brew shellenv)" # Activate homebrew
+  exists mise || eval "$(mise activate zsh)"
 
   # Commands init
   eval "$(jumper init zsh)"
