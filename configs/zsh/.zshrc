@@ -245,7 +245,7 @@ if [[ -d $BREW_PREFIX ]]; then
   ulimit -n 4096
 
   exists brew || eval "$("$BREW_PREFIX"/bin/brew shellenv)" # Activate homebrew
-  exists mise || eval "$(mise activate zsh)"
+  eval "$(mise activate zsh)"
 
   # Commands init
   eval "$(jumper init zsh)"
