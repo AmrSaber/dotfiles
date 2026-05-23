@@ -13,6 +13,34 @@ return {
 
     opts.inlay_hints = { enabled = false }
 
+    -- Fix gopls semantic tokens workaround crash ("table index is nil" at
+    -- vim/lsp/semantic_tokens.lua:66): pad the fabricated legend's
+    -- tokenTypes/tokenModifiers lists so gopls can't reference OOB indices.
+    -- The Go extra workaround creates these from client capabilities (10 mods,
+    -- 23 types) but gopls may use higher indices.
+    opts.setup = opts.setup or {}
+    local orig_gopls_setup = opts.setup.gopls
+    opts.setup.gopls = function(client, config)
+      if orig_gopls_setup then
+        orig_gopls_setup(client, config)
+      end
+
+      Snacks.util.lsp.on({ name = "gopls" }, function(_, client)
+        local prov = client.server_capabilities.semanticTokensProvider
+        if prov and prov.legend then
+          local function pad(t, n)
+            for i = #t + 1, n do
+              t[i] = ""
+            end
+            return t
+          end
+
+          prov.legend.tokenModifiers = pad(prov.legend.tokenModifiers or {}, 64)
+          prov.legend.tokenTypes = pad(prov.legend.tokenTypes or {}, 64)
+        end
+      end)
+    end
+
     return opts
   end,
   init = function()
