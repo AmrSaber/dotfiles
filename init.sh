@@ -31,7 +31,7 @@ brew_packages=(
   neovim just mise zellij stow gum kv jumper jq starship # Core tools
   bat fd ripgrep eza                                     # Modern alternatives
   tlrc fzf yazi yq                                       # Quality of life
-  neofetch fastfetch btop shellcheck                     # Extras
+  fastfetch btop shellcheck                              # Extras
   ffmpeg sevenzip poppler resvg imagemagick              # Yazi tool-kit to provide previews
   go python                                              # Programming languages
 )
