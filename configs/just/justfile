@@ -1,0 +1,80 @@
+[private]
+@default:
+  just --list --unsorted
+
+# === Development ===
+
+# Add all and commit
+[no-cd]
+commit:
+  #!/usr/bin/env bash
+
+  cd $(git rev-parse --show-toplevel)
+  git add .
+  git commit
+
+# Add all and amend
+[no-cd]
+amend:
+  #!/usr/bin/env bash
+
+  cd $(git rev-parse --show-toplevel)
+  git add .
+  git commit --amend --no-edit
+
+# Lint Go project
+[no-cd]
+@lint-go:
+  go vet ./...
+  golangci-lint run ./...
+
+# === System update ===
+
+# Update system
+update:
+  sudo dnf upgrade -y
+  sudo dnf autoremove -y
+
+  flatpak update -y
+
+  brew update
+  brew upgrade
+  brew cleanup
+
+  mise up
+
+  bin update -y
+  bin prune
+
+  # Update dotfiles
+  cd ~/.dotfiles && git pull || gum style --foreground 1 "Could not update dotfiles"
+
+  just check-fedora-system-update
+alias up := update
+
+# Check if there is a new system release
+check-fedora-system-update:
+  #!/usr/bin/env bash
+  
+  if ! grep -iq 'fedora' /etc/os-release; then
+    gum style --foreground 1 "This only works on Fedora OS"
+    exit 1
+  fi
+
+  CURRENT=$(rpm -E %fedora)
+  LATEST=$(curl -s "https://endoflife.date/api/fedora.json" | jq -r '.[0].cycle')
+
+  if [ "$LATEST" -gt "$CURRENT" ]; then
+    gum style --foreground 3 "New release available: Fedora $LATEST (current: $CURRENT)"
+  else
+    gum style --foreground 2 "Already on latest stable: Fedora $CURRENT"
+  fi
+
+# === Notification ===
+
+ping $message='Ping':
+  #!/usr/bin/env bash
+
+  curl -Ss -X POST "https://api.telegram.org/bot$(kv get bot-token@telegram)/sendMessage" \
+    -d chat_id=$(kv get chat-id@telegram) \
+    -d text="$DEVICE_NAME: $message" >/dev/null
