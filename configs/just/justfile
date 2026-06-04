@@ -32,22 +32,48 @@ amend:
 
 # Update system
 update:
-  sudo dnf upgrade -y
-  sudo dnf autoremove -y
+  #!/usr/bin/env bash
 
-  flatpak update -y
+  if command -v dnf &>/dev/null; then
+    sudo dnf upgrade -y
+    sudo dnf autoremove -y
+  elif command -v nala &>/dev/null; then
+    # Package install
+    sudo nala update
+    sudo nala full-upgrade -y
 
-  brew update
-  brew upgrade
-  brew cleanup
+    # Clean up
+    sudo nala autopurge -y
+    sudo nala clean
+  else
+    gum style --foreground 1 "Could not find dnf nor nala!"
+  fi
 
-  mise up
+  command -v flatpak &>/dev/null && flatpak update -y
 
-  bin update -y
-  bin prune
+  if command -v brew &>/dev/null; then
+    brew update
+    brew upgrade
+    brew cleanup
+  else
+    gum style --foreground 1 "brew not found"
+  fi
+
+  if command -v mise &>/dev/null; then
+    mise up
+  else
+    gum style --foreground 1 "mise not found"
+  fi
+
+  if command -v bin &>/dev/null; then
+    bin update -y
+    bin prune
+  else
+    gum style --foreground 1 "bin not found"
+  fi
 
   # Update dotfiles
-  cd ~/.dotfiles && git pull || gum style --foreground 1 "Could not update dotfiles"
+  { cd ~/.dotfiles && git pull; } || gum style --foreground 1 "Could not update dotfiles"
 
   just check-fedora-system-update
 alias up := update
@@ -56,10 +82,8 @@ alias up := update
 check-fedora-system-update:
   #!/usr/bin/env bash
   
-  if ! grep -iq 'fedora' /etc/os-release; then
-    gum style --foreground 1 "This only works on Fedora OS"
-    exit 1
-  fi
+  # Only works for fedora
+  grep -iq 'fedora' /etc/os-release || exit 0
 
   CURRENT=$(rpm -E %fedora)
   LATEST=$(curl -s "https://endoflife.date/api/fedora.json" | jq -r '.[0].cycle')
@@ -67,7 +91,7 @@ check-fedora-system-update:
   if [ "$LATEST" -gt "$CURRENT" ]; then
     gum style --foreground 3 "New release available: Fedora $LATEST (current: $CURRENT)"
   else
-    gum style --foreground 2 "Already on latest stable: Fedora $CURRENT"
+    gum style --foreground 2 "On latest stable OS release: Fedora $CURRENT"
   fi
 
 # === Notification ===
