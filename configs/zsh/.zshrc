@@ -13,8 +13,6 @@ alias dc="docker compose"
 alias ff="fastfetch"
 
 # Neovim
-alias v="nvim"
-alias vr='nvim -c "cd $(git rev-parse --show-toplevel)"'
 alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload"
 alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always {}")'
 
