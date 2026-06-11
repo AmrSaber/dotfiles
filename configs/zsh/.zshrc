@@ -102,6 +102,50 @@ start-renamed() {
   "$@"
 }
 
+auto-commit() {
+  local context="${*}"
+
+  local repo_root
+  repo_root=$(git rev-parse --show-toplevel) || return 1
+
+  ( cd "$repo_root" && git add . )
+  if git -C "$repo_root" diff --cached --quiet; then
+    gum style --foreground 3 "Nothing to commit"
+    return 0
+  fi
+
+  local write_file
+  write_file="$(mktemp --tmpdir=/tmp "$(basename "$repo_root")-XXX")"
+
+  trap 'rm -f $write_file' EXIT
+
+  local prompt
+  prompt="You are an automated git commit agent. Your ONLY job is to write a concise commit message — nothing else, no questions.
+
+Steps:
+1. Run: git status and git diff --cached to understand what was staged.
+2. Write a concise commit message to $write_file
+4. Exit immediately."
+
+  if [[ -n "$context" ]]; then
+    prompt+="\n\n User context for guidance: $context"
+  fi
+
+  opencode run "$prompt" 2>/dev/null
+
+  local commit_message
+  commit_message="$(cat "$write_file")"
+
+  if [[ -z "$commit_message" ]]; then
+    gum style --foreground 1 "No commit message found"
+    return 1
+  fi
+
+  printf "%s\n\n" "$commit_message"
+
+  (cd "$repo_root" && git commit -m "$commit_message")
+}
+
 # Remove anything that comes after file end
 self-cleanup() {
   file_name="$(readlink -f "$HOME/.zshrc")"
