@@ -52,8 +52,8 @@ update:
   command -v flatpak &>/dev/null && flatpak update -y
 
   if command -v brew &>/dev/null; then
-    brew update
-    brew upgrade
+    brew update -y
+    brew upgrade -y
     brew cleanup
   else
     gum style --foreground 1 "brew not found"
