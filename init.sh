@@ -26,6 +26,13 @@ eval "$("$brew_prefix"/bin/brew shellenv)"
 # Add personal homebrew tap
 brew tap amrsaber/tap
 
+# Trust the tap so its formulae load in non-interactive/CI installs. Newer brew
+# enforces tap trust and otherwise aborts with "Refusing to load formula from
+# untrusted tap". Set the transitional env var (keeps old allow-by-default
+# behaviour) and also run `brew trust` when available (the forward-looking way).
+export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+brew trust --tap amrsaber/tap 2>/dev/null || true
+
 # Install needed brew packages
 brew_packages=(
   neovim just mise zellij stow gum kv jumper jq starship opencode gh # Core tools
