@@ -28,12 +28,12 @@ brew tap amrsaber/tap
 
 # Install needed brew packages
 brew_packages=(
-  neovim just mise zellij stow gum kv jumper jq starship # Core tools
-  bat fd ripgrep eza                                     # Modern alternatives
-  tlrc fzf yazi yq                                       # Quality of life
-  fastfetch btop shellcheck                              # Extras
-  ffmpeg sevenzip poppler resvg imagemagick              # Yazi tool-kit to provide previews
-  go python                                              # Programming languages
+  neovim just mise zellij stow gum kv jumper jq starship opencode # Core tools
+  bat fd ripgrep eza                                              # Modern alternatives
+  tlrc fzf yazi yq                                                # Quality of life
+  fastfetch btop shellcheck                                       # Extras
+  ffmpeg sevenzip poppler resvg imagemagick                       # Yazi tool-kit to provide previews
+  go python                                                       # Programming languages
 )
 
 brew_casks=(
