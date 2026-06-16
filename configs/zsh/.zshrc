@@ -40,6 +40,8 @@ export DEVICE_NAME
 BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
 export BREW_PREFIX
 
+export OPENCODE_ENABLE_EXA=1
+
 export EDITOR="nvim"
 export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
 
