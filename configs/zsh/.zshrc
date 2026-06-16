@@ -78,14 +78,10 @@ wait-for() {
 }
 
 # Runs command then exits
-only() {
-  "$@" && exit
-}
+only() { "$@" && exit; }
 
 # Silently runs command
-silent() {
-  "$@" &>/dev/null
-}
+silent() { "$@" &>/dev/null; }
 
 # Fails if given command does not exist
 exists() {
@@ -104,15 +100,16 @@ start-renamed() {
   "$@"
 }
 
+# Ask opencode for a commit message, then use it to commit
 auto-commit() {
   local context="${*}"
 
   local repo_root
   repo_root=$(git rev-parse --show-toplevel) || return 1
 
-  ( cd "$repo_root" && git add . )
+  (cd "$repo_root" && git add .)
   if git -C "$repo_root" diff --cached --quiet; then
-    gum style --foreground 3 "Nothing to commit"
+    coloured 3 "Nothing to commit"
     return 0
   fi
 
@@ -123,6 +120,7 @@ auto-commit() {
 
   local prompt
   prompt="You are an automated git commit agent. Your ONLY job is to write a concise commit message — nothing else, no questions.
+  Follow Conventional Commit specs as much as possible.
 
 Steps:
 1. Run: git status and git diff --cached to understand what was staged.
@@ -139,7 +137,7 @@ Steps:
   commit_message="$(cat "$write_file")"
 
   if [[ -z "$commit_message" ]]; then
-    gum style --foreground 1 "No commit message found"
+    coloured 1 "No commit message found"
     return 1
   fi
 
@@ -147,6 +145,9 @@ Steps:
 
   (cd "$repo_root" && git commit -m "$commit_message")
 }
+
+# Auto-commit then `git push`
+auto-publish() { auto-commit "$@" && git push; }
 
 # Remove anything that comes after file end
 self-cleanup() {
@@ -236,13 +237,6 @@ notes() {
   (cd "$NOTES_DIR" && nvim)
 }
 
-alarm() {
-  for i in {0..2}; do
-    printf '\a'
-    sleep .15s
-  done
-}
-
 # Create a temp directory and move to it
 jump-temp() {
   local dir_name
@@ -270,9 +264,7 @@ jump-find() {
       cut -d ' ' -f 1
   )"
 
-  if [[ -n "$mark" ]]; then
-    jump "$mark"
-  fi
+  [[ -n "$mark" ]] && jump "$mark"
 }
 alias jf="jump-find"
 
