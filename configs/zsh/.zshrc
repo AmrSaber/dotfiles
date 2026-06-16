@@ -290,7 +290,7 @@ else
 fi
 
 # Setup auto-completion for commands
-completion_commands=(mise kv gum bin opencode)
+completion_commands=(mise kv gum bin opencode random)
 for cmd in "${completion_commands[@]}"; do
   exists "$cmd" && eval "$("$cmd" completion zsh)"
 done
