@@ -25,6 +25,7 @@ eval "$("$brew_prefix"/bin/brew shellenv)"
 
 # Add personal homebrew tap
 brew tap amrsaber/tap
+brew trust amrsaber/tap
 
 # Trust the tap so its formulae load in non-interactive/CI installs. Newer brew
 # enforces tap trust and otherwise aborts with "Refusing to load formula from
