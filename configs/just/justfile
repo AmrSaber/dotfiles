@@ -52,7 +52,7 @@ update:
   command -v flatpak &>/dev/null && flatpak update -y
 
   if command -v brew &>/dev/null; then
-    brew update -y
+    brew update
     brew upgrade -y
     brew cleanup
   else
