@@ -77,9 +77,6 @@ wait-for() {
   done
 }
 
-# Runs command then exits
-only() { "$@" && exit; }
-
 # Silently runs command
 silent() { "$@" &>/dev/null; }
 
@@ -273,7 +270,6 @@ alias jf="jump-find"
 autoload -Uz compinit && compinit
 
 # Perserve auto-completion for passed commands
-compdef _precommand only
 compdef _precommand silent
 
 if [[ -d $BREW_PREFIX ]]; then
