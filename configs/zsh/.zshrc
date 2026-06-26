@@ -128,7 +128,7 @@ Steps:
     prompt+="\n\n User context for guidance: $context"
   fi
 
-  opencode run "$prompt" 2>/dev/null
+  opencode run "$prompt" &>/tmp/opencode-auto-commit
 
   local commit_message
   commit_message="$(cat "$write_file")"
