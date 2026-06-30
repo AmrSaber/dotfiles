@@ -265,6 +265,13 @@ jump-find() {
 }
 alias jf="jump-find"
 
+# Copy stdin (or args) to system clipboard via OSC 52
+copy() {
+  local data
+  if [ -t 0 ]; then data="$*"; else data="$(cat)"; fi
+  printf '\033]52;c;%s\a' "$(printf '%s' "$data" | base64 | tr -d '\n')" > /dev/tty
+}
+
 # === Setup ===
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
