@@ -272,6 +272,23 @@ copy() {
   printf '\033]52;c;%s\a' "$(printf '%s' "$data" | base64 | tr -d '\n')" > /dev/tty
 }
 
+# Find and edit mise config files
+mise-edit() {
+  current_dir="$(pwd | xargs realpath)"
+
+  matches=()
+  for config_path in $(mise config --json | jq -r '.[].path'); do
+    config_dir="$(realpath "${config_path%/*}")"
+    [[ "$current_dir" == "$config_dir"* ]] && matches+=("$config_path")
+  done
+
+  # Reverse the array
+  # bash variation: readarray -t matches < <(printf '%s\n' "${matches[@]}" | tac)
+  matches=("${(@Oa)matches}")
+
+  nvim "${matches[@]}"
+}
+
 # === Setup ===
 # Setup zsh auto completion
 autoload -Uz compinit && compinit
