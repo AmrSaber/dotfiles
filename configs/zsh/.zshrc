@@ -28,10 +28,10 @@ alias py-activate="source .venv/bin/activate"
 alias py-deactivate="deactivate"
 
 # Utils
-alias dotenv='export $(cat .evn | xargs)'      # Parse and set .env file
-alias scripts='jq ".scripts" package.json'     # Print "scripts" section from package.json
-alias jr='cd $(git rev-parse --show-toplevel)' # Jump to repo root
-alias open='xdg-open'                          # Open file with default app
+alias dotenv='export $(cat .evn | xargs)'            # Parse and set .env file
+alias scripts='jq ".scripts" package.json'           # Print "scripts" section from package.json
+alias jr='cd $(git rev-parse --show-toplevel)'       # Jump to repo root
+command -v open &>/dev/null || alias open='xdg-open' # Open file with default app
 
 # === Exports ===
 DEVICE_NAME="$(hostname)"
@@ -269,7 +269,7 @@ alias jf="jump-find"
 copy() {
   local data
   if [ -t 0 ]; then data="$*"; else data="$(cat)"; fi
-  printf '\033]52;c;%s\a' "$(printf '%s' "$data" | base64 | tr -d '\n')" > /dev/tty
+  printf '\033]52;c;%s\a' "$(printf '%s' "$data" | base64 | tr -d '\n')" >/dev/tty
 }
 
 # Find and edit mise config files
