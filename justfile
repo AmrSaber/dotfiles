@@ -26,31 +26,24 @@ restore-extensions:
   cp -r {{extensions_dir}} ~/.local/share/gnome-shell/extensions
   dconf load /org/gnome/shell/extensions/ < {{extension_configs_path}} # Load extension configs
 
-# Stows given packages. If none provided, interactive select is used.
-[working-directory: './configs']
-stow *apps:
-  #!/usr/bin/env bash
- 
-  apps={{apps}}
-
-  # If no apps provided, choose which ones to stow
-  [ -z "$apps" ] && apps=$(gum choose --no-limit $(ls))
-
-  # Stow provided/selected apps
-  if [ -n "$apps" ]; then
-    echo "Stowing [$(echo $apps | tr '\n' ' ' | sed 's/ *$//')]"
-    stow -t "$HOME" -R $apps
-  else
-    gum style --foreground=03 "Nothing provided to stow!"
-  fi
-
 # Stows all configs
 [working-directory: './configs']
-stow-all:
+stow:
   #!/usr/bin/env bash
 
   for app in *; do
-    stow -t "$HOME" -R "$app" && echo "Stowed $app" || echo "Could not stow $app"
+    if [[ "$app" == "opencode" ]]; then
+      stow -t "$HOME" --no-folding -R "$app"
+    else
+      stow -t "$HOME" -R "$app"
+    fi
+
+    if (($? == 0)); then
+      gum style --foreground 4 "Stowed '$app'"
+    else
+      gum style --foreground 1 "Could not stow '$app'"
+    fi
+
   done
 
 # List existing configs
