@@ -33,47 +33,57 @@ amend:
 # Update system
 update:
   #!/usr/bin/env bash
+  coloured() { gum style --foreground "$@"; }
 
+  coloured 2 "Updating system packages"
   if command -v dnf &>/dev/null; then
     sudo dnf upgrade -y
     sudo dnf autoremove -y
   elif command -v nala &>/dev/null; then
-    # Package install
     sudo nala update
     sudo nala full-upgrade -y
-
-    # Clean up
     sudo nala autopurge -y
     sudo nala clean
   else
-    gum style --foreground 1 "Could not find dnf nor nala!"
+    coloured 1 "Could not find dnf nor nala!"
   fi
+  echo
 
+  coloured 2 "Updating flatpak"
   command -v flatpak &>/dev/null && flatpak update -y
+  echo
 
+  coloured 2 "Updating brew"
   if command -v brew &>/dev/null; then
     brew update
     brew upgrade -y
     brew cleanup
   else
-    gum style --foreground 1 "brew not found"
+    coloured 1 "brew not found"
   fi
+  echo
 
+  coloured "Updating mise"
   if command -v mise &>/dev/null; then
     mise up
   else
-    gum style --foreground 1 "mise not found"
+    coloured 1 "mise not found"
   fi
+  echo
 
+  coloured 2 "Updating bin"
   if command -v bin &>/dev/null; then
     bin update -y
     bin prune
   else
-    gum style --foreground 1 "bin not found"
+    coloured 1 "bin not found"
   fi
+  echo
 
   # Update dotfiles
+  coloured 2 "Updating dotfiles"
   { cd ~/.dotfiles && git pull; } || gum style --foreground 1 "Could not update dotfiles"
+  echo
 
   just check-fedora-system-update
 alias up := update
