@@ -128,13 +128,19 @@ Steps:
     prompt+="\n\n User context for guidance: $context"
   fi
 
-  opencode run "$prompt" &>/tmp/opencode-auto-commit
+  local agent_output
+  if [[ -n "$OC_FAST_MODEL" ]]; then
+    agent_output="$(opencode run "$prompt" --pure -m "$OC_FAST_MODEL" 2>&1)"
+  else
+    agent_output="$(opencode run "$prompt" --pure 2>&1)"
+  fi
 
   local commit_message
   commit_message="$(cat "$write_file")"
 
   if [[ -z "$commit_message" ]]; then
-    coloured 1 "No commit message found"
+    coloured 1 "No commit message found" >&2
+    printf "\nagent output:\n%s\n" "$agent_output" >&2
     return 1
   fi
 
