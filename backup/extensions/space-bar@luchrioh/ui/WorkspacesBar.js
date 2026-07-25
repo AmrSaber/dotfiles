@@ -20,15 +20,23 @@ const MAX_CLICK_TIME_DELTA = 300;
  */
 const LONG_PRESS_DURATION = 500;
 export class WorkspacesBar {
+    _extension;
+    _name;
+    _settings = Settings.getInstance();
+    _styles = Styles.getInstance();
+    _ws = Workspaces.getInstance();
+    _button;
+    _buttonSubject = new Subject(null);
+    _menu;
+    /** The child of `_button` when `indicator-style` is `current-workspace-name`. */
+    _wsLabel;
+    /** The child of `_button` when `indicator-style` is `workspaces-bar`. */
+    _wsBar;
+    _dragHandler = new WorkspacesBarDragHandler(() => this._updateWorkspaces());
+    _touchTimeout = new Timeout();
     constructor(_extension) {
         this._extension = _extension;
         this._name = `${this._extension.metadata.name}`;
-        this._settings = Settings.getInstance();
-        this._styles = Styles.getInstance();
-        this._ws = Workspaces.getInstance();
-        this._buttonSubject = new Subject(null);
-        this._dragHandler = new WorkspacesBarDragHandler(() => this._updateWorkspaces());
-        this._touchTimeout = new Timeout();
     }
     init() {
         this._initButton();
@@ -85,6 +93,7 @@ export class WorkspacesBar {
             yAlign: Clutter.ActorAlign.CENTER,
         });
         this._button.add_child(this._wsLabel);
+        this._button._clickGesture.set_enabled(false);
         this._button.connect('button-press-event', (actor, event) => {
             switch (event.get_button()) {
                 case 1:
@@ -103,6 +112,7 @@ export class WorkspacesBar {
         });
     }
     _initWorkspacesBar() {
+        this._button._clickGesture.set_enabled(false);
         this._button._delegate = this._dragHandler;
         this._button.trackHover = false;
         this._wsBar = new St.BoxLayout({});
@@ -155,7 +165,7 @@ export class WorkspacesBar {
                     break;
                 case 3:
                     this._button.menu.toggle();
-                    break;
+                    return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
         });
@@ -167,12 +177,12 @@ export class WorkspacesBar {
                 case 1:
                     if (lastButton1PressEvent) {
                         const timeDelta = event.get_time() - lastButton1PressEvent.get_time();
+                        lastButton1PressEvent = null;
                         if (timeDelta <= MAX_CLICK_TIME_DELTA) {
                             this._ws.switchTo(workspace.index, 'click-on-label');
+                            return Clutter.EVENT_STOP;
                         }
-                        lastButton1PressEvent = null;
                     }
-                    break;
             }
             return Clutter.EVENT_PROPAGATE;
         });
@@ -237,13 +247,18 @@ var WorkspacesButton = GObject.registerClass(class WorkspacesButton extends Pane
     }
 });
 class WorkspacesBarDragHandler {
+    _updateWorkspaces;
+    wsBoxes = [];
+    _ws = Workspaces.getInstance();
+    _dragMonitor;
+    _draggedWorkspace;
+    _wsBoxPositions;
+    _initialDropPosition;
+    _barWidthAtDragStart = null;
+    _hasLeftInitialPosition = false;
+    _workspacesBarOffset = null;
     constructor(_updateWorkspaces) {
         this._updateWorkspaces = _updateWorkspaces;
-        this.wsBoxes = [];
-        this._ws = Workspaces.getInstance();
-        this._barWidthAtDragStart = null;
-        this._hasLeftInitialPosition = false;
-        this._workspacesBarOffset = null;
     }
     destroy() {
         this._setDragMonitor(false);
@@ -253,13 +268,16 @@ class WorkspacesBarDragHandler {
         draggable.connect('drag-begin', () => {
             this._onDragStart(wsBox, workspace);
             hooks.onDragStart();
+            return undefined;
         });
         draggable.connect('drag-cancelled', () => {
             this._updateDragPlaceholder(this._initialDropPosition);
             this._onDragFinished(wsBox);
+            return undefined;
         });
         draggable.connect('drag-end', () => {
             this._updateWorkspaces();
+            return undefined;
         });
     }
     acceptDrop(source, actor, x, y) {
@@ -403,6 +421,7 @@ class WorkspacesBarDragHandler {
     }
 }
 class WorkspaceBoxDragHandler {
+    _workspace;
     constructor(_workspace) {
         this._workspace = _workspace;
     }

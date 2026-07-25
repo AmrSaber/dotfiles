@@ -1,7 +1,10 @@
 import Gio from 'gi://Gio';
 export class Settings {
+    static _instance;
+    static _extension;
     static init(extension) {
-        Settings._instance = new Settings(extension);
+        Settings._extension = extension;
+        Settings._instance = new Settings();
         Settings._instance.init();
     }
     static destroy() {
@@ -11,76 +14,73 @@ export class Settings {
     static getInstance() {
         return Settings._instance;
     }
-    constructor(_extension) {
-        this._extension = _extension;
-        this.state = this._extension.getSettings(`${this._extension.metadata['settings-schema']}.state`);
-        this.behaviorSettings = this._extension.getSettings(`${this._extension.metadata['settings-schema']}.behavior`);
-        this.appearanceSettings = this._extension.getSettings(`${this._extension.metadata['settings-schema']}.appearance`);
-        this.shortcutsSettings = this._extension.getSettings(`${this._extension.metadata['settings-schema']}.shortcuts`);
-        this.mutterSettings = new Gio.Settings({ schema: 'org.gnome.mutter' });
-        this.wmPreferencesSettings = new Gio.Settings({
-            schema: 'org.gnome.desktop.wm.preferences',
-        });
-        this._version = SettingsSubject.createIntSubject(this.state, 'version');
-        this.workspaceNamesMap = SettingsSubject.createJsonObjectSubject(this.state, 'workspace-names-map');
-        this.dynamicWorkspaces = SettingsSubject.createBooleanSubject(this.mutterSettings, 'dynamic-workspaces');
-        this.indicatorStyle = SettingsSubject.createStringSubject(this.behaviorSettings, 'indicator-style');
-        this.enableCustomLabel = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'enable-custom-label');
-        this.enableCustomLabelInMenus = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'enable-custom-label-in-menu');
-        this.customLabelNamed = SettingsSubject.createStringSubject(this.behaviorSettings, 'custom-label-named');
-        this.customLabelUnnamed = SettingsSubject.createStringSubject(this.behaviorSettings, 'custom-label-unnamed');
-        this.position = SettingsSubject.createStringSubject(this.behaviorSettings, 'position');
-        this.systemWorkspaceIndicator = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'system-workspace-indicator');
-        this.positionIndex = SettingsSubject.createIntSubject(this.behaviorSettings, 'position-index');
-        this.scrollWheel = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel');
-        this.scrollWheelDebounce = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'scroll-wheel-debounce');
-        this.scrollWheelDebounceTime = SettingsSubject.createIntSubject(this.behaviorSettings, 'scroll-wheel-debounce-time');
-        this.scrollWheelVertical = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel-vertical');
-        this.scrollWheelHorizontal = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel-horizontal');
-        this.scrollWheelWrapAround = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'scroll-wheel-wrap-around');
-        this.alwaysShowNumbers = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'always-show-numbers');
-        this.showEmptyWorkspaces = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'show-empty-workspaces');
-        this.toggleOverview = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'toggle-overview');
-        this.smartWorkspaceNames = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'smart-workspace-names');
-        this.reevaluateSmartWorkspaceNames = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'reevaluate-smart-workspace-names');
-        this.enableActivateWorkspaceShortcuts = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'enable-activate-workspace-shortcuts');
-        this.backAndForth = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'back-and-forth');
-        this.enableMoveToWorkspaceShortcuts = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'enable-move-to-workspace-shortcuts');
-        this.workspaceNames = SettingsSubject.createStringArraySubject(this.wmPreferencesSettings, 'workspace-names');
-        this.workspacesBarPadding = SettingsSubject.createIntSubject(this.appearanceSettings, 'workspaces-bar-padding');
-        this.workspaceMargin = SettingsSubject.createIntSubject(this.appearanceSettings, 'workspace-margin');
-        this.activeWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-background-color');
-        this.activeWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-text-color');
-        this.activeWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-border-color');
-        this.activeWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-font-size');
-        this.activeWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-font-weight');
-        this.activeWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-border-radius');
-        this.activeWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-border-width');
-        this.activeWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-padding-h');
-        this.activeWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-padding-v');
-        this.inactiveWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-background-color');
-        this.inactiveWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-text-color');
-        this.inactiveWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-border-color');
-        this.inactiveWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-font-size');
-        this.inactiveWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-font-weight');
-        this.inactiveWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-border-radius');
-        this.inactiveWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-border-width');
-        this.inactiveWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-padding-h');
-        this.inactiveWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-padding-v');
-        this.emptyWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-background-color');
-        this.emptyWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-text-color');
-        this.emptyWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-border-color');
-        this.emptyWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-font-size');
-        this.emptyWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-font-weight');
-        this.emptyWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-border-radius');
-        this.emptyWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-border-width');
-        this.emptyWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-padding-h');
-        this.emptyWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-padding-v');
-        this.applicationStyles = SettingsSubject.createStringSubject(this.appearanceSettings, 'application-styles');
-        this.customStylesEnabled = SettingsSubject.createBooleanSubject(this.appearanceSettings, 'custom-styles-enabled');
-        this.customStylesFailed = SettingsSubject.createBooleanSubject(this.appearanceSettings, 'custom-styles-failed');
-        this.customStyles = SettingsSubject.createStringSubject(this.appearanceSettings, 'custom-styles');
-    }
+    state = Settings._extension.getSettings(`${Settings._extension.metadata['settings-schema']}.state`);
+    behaviorSettings = Settings._extension.getSettings(`${Settings._extension.metadata['settings-schema']}.behavior`);
+    appearanceSettings = Settings._extension.getSettings(`${Settings._extension.metadata['settings-schema']}.appearance`);
+    shortcutsSettings = Settings._extension.getSettings(`${Settings._extension.metadata['settings-schema']}.shortcuts`);
+    mutterSettings = new Gio.Settings({ schema: 'org.gnome.mutter' });
+    wmPreferencesSettings = new Gio.Settings({
+        schema: 'org.gnome.desktop.wm.preferences',
+    });
+    _version = SettingsSubject.createIntSubject(this.state, 'version');
+    workspaceNamesMap = SettingsSubject.createJsonObjectSubject(this.state, 'workspace-names-map');
+    dynamicWorkspaces = SettingsSubject.createBooleanSubject(this.mutterSettings, 'dynamic-workspaces');
+    indicatorStyle = SettingsSubject.createStringSubject(this.behaviorSettings, 'indicator-style');
+    enableCustomLabel = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'enable-custom-label');
+    enableCustomLabelInMenus = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'enable-custom-label-in-menu');
+    customLabelNamed = SettingsSubject.createStringSubject(this.behaviorSettings, 'custom-label-named');
+    customLabelUnnamed = SettingsSubject.createStringSubject(this.behaviorSettings, 'custom-label-unnamed');
+    position = SettingsSubject.createStringSubject(this.behaviorSettings, 'position');
+    systemWorkspaceIndicator = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'system-workspace-indicator');
+    positionIndex = SettingsSubject.createIntSubject(this.behaviorSettings, 'position-index');
+    scrollWheel = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel');
+    scrollWheelDebounce = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'scroll-wheel-debounce');
+    scrollWheelDebounceTime = SettingsSubject.createIntSubject(this.behaviorSettings, 'scroll-wheel-debounce-time');
+    scrollWheelVertical = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel-vertical');
+    scrollWheelHorizontal = SettingsSubject.createStringSubject(this.behaviorSettings, 'scroll-wheel-horizontal');
+    scrollWheelWrapAround = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'scroll-wheel-wrap-around');
+    alwaysShowNumbers = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'always-show-numbers');
+    showEmptyWorkspaces = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'show-empty-workspaces');
+    toggleOverview = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'toggle-overview');
+    smartWorkspaceNames = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'smart-workspace-names');
+    reevaluateSmartWorkspaceNames = SettingsSubject.createBooleanSubject(this.behaviorSettings, 'reevaluate-smart-workspace-names');
+    enableActivateWorkspaceShortcuts = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'enable-activate-workspace-shortcuts');
+    backAndForth = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'back-and-forth');
+    enableMoveToWorkspaceShortcuts = SettingsSubject.createBooleanSubject(this.shortcutsSettings, 'enable-move-to-workspace-shortcuts');
+    workspaceNames = SettingsSubject.createStringArraySubject(this.wmPreferencesSettings, 'workspace-names');
+    workspacesBarPadding = SettingsSubject.createIntSubject(this.appearanceSettings, 'workspaces-bar-padding');
+    workspaceMargin = SettingsSubject.createIntSubject(this.appearanceSettings, 'workspace-margin');
+    activeWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-background-color');
+    activeWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-text-color');
+    activeWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-border-color');
+    activeWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-font-size');
+    activeWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'active-workspace-font-weight');
+    activeWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-border-radius');
+    activeWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-border-width');
+    activeWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-padding-h');
+    activeWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'active-workspace-padding-v');
+    inactiveWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-background-color');
+    inactiveWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-text-color');
+    inactiveWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-border-color');
+    inactiveWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-font-size');
+    inactiveWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'inactive-workspace-font-weight');
+    inactiveWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-border-radius');
+    inactiveWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-border-width');
+    inactiveWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-padding-h');
+    inactiveWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'inactive-workspace-padding-v');
+    emptyWorkspaceBackgroundColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-background-color');
+    emptyWorkspaceTextColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-text-color');
+    emptyWorkspaceBorderColor = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-border-color');
+    emptyWorkspaceFontSize = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-font-size');
+    emptyWorkspaceFontWeight = SettingsSubject.createStringSubject(this.appearanceSettings, 'empty-workspace-font-weight');
+    emptyWorkspaceBorderRadius = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-border-radius');
+    emptyWorkspaceBorderWidth = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-border-width');
+    emptyWorkspacePaddingH = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-padding-h');
+    emptyWorkspacePaddingV = SettingsSubject.createIntSubject(this.appearanceSettings, 'empty-workspace-padding-v');
+    applicationStyles = SettingsSubject.createStringSubject(this.appearanceSettings, 'application-styles');
+    customStylesEnabled = SettingsSubject.createBooleanSubject(this.appearanceSettings, 'custom-styles-enabled');
+    customStylesFailed = SettingsSubject.createBooleanSubject(this.appearanceSettings, 'custom-styles-failed');
+    customStyles = SettingsSubject.createStringSubject(this.appearanceSettings, 'custom-styles');
     init() {
         SettingsSubject.initAll();
         this.runMigrations();
@@ -97,10 +97,14 @@ export class Settings {
                 this.indicatorStyle.value = 'current-workspace';
             }
         }
-        this._version.value = this._extension.metadata['version'];
+        this._version.value = Settings._extension.metadata['version'];
     }
 }
 class SettingsSubject {
+    _settings;
+    _name;
+    _type;
+    static _subjects = [];
     static createBooleanSubject(settings, name) {
         return new SettingsSubject(settings, name, 'boolean');
     }
@@ -133,11 +137,15 @@ class SettingsSubject {
     set value(value) {
         this._setValue(value);
     }
+    _value;
+    _subscribers = [];
+    _getValue;
+    _setValue;
+    _disconnect;
     constructor(_settings, _name, _type) {
         this._settings = _settings;
         this._name = _name;
         this._type = _type;
-        this._subscribers = [];
         SettingsSubject._subjects.push(this);
     }
     subscribe(subscriber, { emitCurrentValue = false } = {}) {
@@ -197,4 +205,3 @@ class SettingsSubject {
         }
     }
 }
-SettingsSubject._subjects = [];

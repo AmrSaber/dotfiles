@@ -3,10 +3,11 @@ import GLib from 'gi://GLib';
  * A subscribe/notify mechanism that debounces multiple subsequent notify calls.
  */
 export class DebouncingNotifier {
+    _delayMs;
+    _subscribers = [];
+    _timeout = null;
     constructor(_delayMs = 0) {
         this._delayMs = _delayMs;
-        this._subscribers = [];
-        this._timeout = null;
     }
     notify() {
         if (this._timeout) {

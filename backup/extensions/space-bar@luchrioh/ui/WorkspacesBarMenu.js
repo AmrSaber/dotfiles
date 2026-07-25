@@ -7,15 +7,17 @@ import { Settings } from '../services/Settings.js';
 import { WorkspaceNames } from '../services/WorkspaceNames.js';
 import { Workspaces } from '../services/Workspaces.js';
 export class WorkspacesBarMenu {
+    _extension;
+    _menu;
+    _keyBindings = KeyBindings.getInstance();
+    _settings = Settings.getInstance();
+    _ws = Workspaces.getInstance();
+    _wsNames = WorkspaceNames.getInstance();
+    _hiddenWorkspacesSection = new PopupMenu.PopupMenuSection();
+    _manageWorkspaceSection = new PopupMenu.PopupMenuSection();
     constructor(_extension, _menu) {
         this._extension = _extension;
         this._menu = _menu;
-        this._keyBindings = KeyBindings.getInstance();
-        this._settings = Settings.getInstance();
-        this._ws = Workspaces.getInstance();
-        this._wsNames = WorkspaceNames.getInstance();
-        this._hiddenWorkspacesSection = new PopupMenu.PopupMenuSection();
-        this._manageWorkspaceSection = new PopupMenu.PopupMenuSection();
     }
     init() {
         this._menu.box.add_style_class_name('space-bar-menu');
@@ -149,8 +151,9 @@ export class WorkspacesBarMenu {
     }
 }
 const PopupMenuItemEntry = GObject.registerClass(class PopupMenuItem extends PopupMenu.PopupBaseMenuItem {
-    _init(params) {
-        super._init(params);
+    entry;
+    constructor(params = {}) {
+        super(params);
         this.entry = new St.Entry({
             xExpand: true,
         });

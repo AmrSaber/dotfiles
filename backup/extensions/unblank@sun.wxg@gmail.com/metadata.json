@@ -11,9 +11,10 @@
     "46",
     "47",
     "48",
-    "49"
+    "49",
+    "50"
   ],
   "url": "https://github.com/sunwxg/gnome-shell-extension-unblank",
   "uuid": "unblank@sun.wxg@gmail.com",
-  "version": 34
+  "version": 35
 }

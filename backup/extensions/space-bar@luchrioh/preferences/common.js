@@ -4,6 +4,10 @@ import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import { DropDownChoice } from './DropDownChoice.js';
 class PreferencesRow {
+    _settings;
+    _row;
+    _key;
+    _setEnabledInner;
     constructor(_settings, _row, _key, _setEnabledInner) {
         this._settings = _settings;
         this._row = _row;

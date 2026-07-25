@@ -1,8 +1,10 @@
 import Adw from 'gi://Adw';
 import { addKeyboardShortcut, addToggle } from './common.js';
 export class ShortcutsPage {
+    window;
+    page = new Adw.PreferencesPage();
+    _settings;
     constructor(extensionPreferences) {
-        this.page = new Adw.PreferencesPage();
         this._settings = extensionPreferences.getSettings(`org.gnome.shell.extensions.space-bar.shortcuts`);
     }
     init() {

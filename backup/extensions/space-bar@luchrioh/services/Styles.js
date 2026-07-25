@@ -6,13 +6,7 @@ import { Settings } from './Settings.js';
  * Tracks and provides the styles for the workspaces bar.
  */
 export class Styles {
-    constructor() {
-        this._settings = Settings.getInstance();
-        /** Notifier for changed styles of the workspaces bar. */
-        this._workspacesBarUpdateNotifier = new DebouncingNotifier();
-        /** Notifier for changed styles of workspaces labels. */
-        this._workspaceUpdateNotifier = new DebouncingNotifier();
-    }
+    static _instance;
     static init() {
         Styles._instance = new Styles();
         Styles._instance.init();
@@ -24,6 +18,17 @@ export class Styles {
     static getInstance() {
         return Styles._instance;
     }
+    _settings = Settings.getInstance();
+    /** Notifier for changed styles of the workspaces bar. */
+    _workspacesBarUpdateNotifier = new DebouncingNotifier();
+    /** Notifier for changed styles of workspaces labels. */
+    _workspaceUpdateNotifier = new DebouncingNotifier();
+    /**
+     * Temporary file containing dynamically loaded styles.
+     *
+     * We keep a reference so we can delete the file and unload the styles later.
+     */
+    _dynamicStyleSheet;
     init() {
         this._registerSettingChanges();
         this._updateStyleSheet();
@@ -62,7 +67,12 @@ export class Styles {
         if (this._dynamicStyleSheet) {
             const themeContext = St.ThemeContext.get_for_stage(global.stage);
             themeContext.get_theme().unload_stylesheet(this._dynamicStyleSheet);
-            this._dynamicStyleSheet.delete(null);
+            try {
+                this._dynamicStyleSheet.delete(null);
+            }
+            catch (e) {
+                console.warn('Failed to delete temporary stylesheet file:', e);
+            }
             this._dynamicStyleSheet = undefined;
         }
     }

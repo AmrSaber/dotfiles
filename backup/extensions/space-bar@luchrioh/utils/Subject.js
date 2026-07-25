@@ -2,8 +2,9 @@ export class Subject {
     get value() {
         return this._value;
     }
+    _value;
+    _observers = [];
     constructor(value) {
-        this._observers = [];
         this._value = value;
     }
     next(value) {

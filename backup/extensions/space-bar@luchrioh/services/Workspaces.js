@@ -14,24 +14,7 @@ function getWindows(workspace) {
         .filter((w, i, a) => !w.skipTaskbar && a.indexOf(w) === i);
 }
 export class Workspaces {
-    constructor() {
-        this.numberOfEnabledWorkspaces = 0;
-        this.lastVisibleWorkspace = 0;
-        this.currentIndex = 0;
-        this.workspaces = [];
-        this._previousWorkspace = 0;
-        this._metaWorkspaces = [];
-        this._settings = Settings.getInstance();
-        this._updateNotifier = new DebouncingNotifier();
-        this._smartNamesNotifier = new DebouncingNotifier();
-        /**
-         * Listeners for windows being added to a workspace.
-         *
-         * The listeners are connected to a workspace and there is one listener per workspace that needs
-         * tracking.
-         */
-        this._windowChangedListeners = [];
-    }
+    static _instance;
     static init() {
         Workspaces._instance = new Workspaces();
         Workspaces._instance.init();
@@ -43,6 +26,27 @@ export class Workspaces {
     static getInstance() {
         return Workspaces._instance;
     }
+    numberOfEnabledWorkspaces = 0;
+    lastVisibleWorkspace = 0;
+    currentIndex = 0;
+    workspaces = [];
+    _previousWorkspace = 0;
+    _metaWorkspaces = [];
+    _ws_changed;
+    _ws_reordered;
+    _ws_active_changed;
+    _windows_changed;
+    _settings = Settings.getInstance();
+    _wsNames;
+    _updateNotifier = new DebouncingNotifier();
+    _smartNamesNotifier = new DebouncingNotifier();
+    /**
+     * Listeners for windows being added to a workspace.
+     *
+     * The listeners are connected to a workspace and there is one listener per workspace that needs
+     * tracking.
+     */
+    _windowChangedListeners = [];
     init() {
         this._wsNames = WorkspaceNames.init(this);
         this._ws_reordered = global.workspace_manager.connect('workspaces-reordered', () => {
@@ -127,13 +131,13 @@ export class Workspaces {
     activate(index) {
         const workspace = global.workspace_manager.get_workspace_by_index(index);
         if (workspace) {
-            workspace.activate(global.get_current_time());
-            this.focusMostRecentWindowOnWorkspace(workspace);
             if (!Main.overview.visible &&
                 !this.workspaces[index].hasWindows &&
                 this._settings.toggleOverview.value) {
                 Main.overview.show();
             }
+            workspace.activate(global.get_current_time());
+            this.focusMostRecentWindowOnWorkspace(workspace);
         }
     }
     activatePrevious() {

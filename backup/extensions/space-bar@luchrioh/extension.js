@@ -8,11 +8,8 @@ import { Workspaces } from './services/Workspaces.js';
 import { WorkspacesBar } from './ui/WorkspacesBar.js';
 import { destroyAllHooks } from './utils/hook.js';
 export default class SpaceBarExtension extends Extension {
-    constructor() {
-        super(...arguments);
-        this.workspacesBar = null;
-        this.scrollHandler = null;
-    }
+    workspacesBar = null;
+    scrollHandler = null;
     enable() {
         Settings.init(this);
         TopBarAdjustments.init();

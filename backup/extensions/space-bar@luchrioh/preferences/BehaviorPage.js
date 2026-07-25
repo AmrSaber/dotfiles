@@ -20,8 +20,10 @@ export const positionOptions = {
     right: 'Right',
 };
 export class BehaviorPage {
+    window;
+    page = new Adw.PreferencesPage();
+    _settings;
     constructor(extensionPreferences) {
-        this.page = new Adw.PreferencesPage();
         this._settings = extensionPreferences.getSettings(`org.gnome.shell.extensions.space-bar.behavior`);
     }
     init() {
