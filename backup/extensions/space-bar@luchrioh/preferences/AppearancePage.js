@@ -13,9 +13,12 @@ export const fontWeightOptions = {
     '900': 'Black',
 };
 export class AppearancePage {
+    _extensionPreferences;
+    window;
+    page = new Adw.PreferencesPage();
+    _settings;
     constructor(_extensionPreferences) {
         this._extensionPreferences = _extensionPreferences;
-        this.page = new Adw.PreferencesPage();
         this._settings = _extensionPreferences.getSettings(`org.gnome.shell.extensions.space-bar.appearance`);
     }
     init() {

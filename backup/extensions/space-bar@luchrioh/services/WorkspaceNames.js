@@ -1,5 +1,7 @@
 import { Settings } from './Settings.js';
 export class WorkspaceNames {
+    _ws;
+    static _instance;
     static init(workspaces) {
         this._instance = new WorkspaceNames(workspaces);
         return this._instance;
@@ -7,9 +9,9 @@ export class WorkspaceNames {
     static getInstance() {
         return this._instance;
     }
+    _settings = Settings.getInstance();
     constructor(_ws) {
         this._ws = _ws;
-        this._settings = Settings.getInstance();
     }
     insert(index) {
         const workspaceNames = this._getNames();

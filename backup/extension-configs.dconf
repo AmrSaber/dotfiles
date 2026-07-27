@@ -6,7 +6,7 @@ icon-saturation=0.0
 icon-size=0
 
 [auto-move-windows]
-application-list=['kitty.desktop:2', 'com.vivaldi.Vivaldi.desktop:1', 'steam.desktop:3']
+application-list=['com.vivaldi.Vivaldi.desktop:1', 'steam.desktop:3', 'com.mitchellh.ghostty.desktop:2']
 
 [caffeine]
 cli-toggle=true
@@ -51,14 +51,65 @@ show-mounts=false
 show-trash=false
 transparency-mode='FIXED'
 
+[hidetopbar]
+animation-time-autohide=0.0
+animation-time-overview=0.0
+enable-active-window=false
+enable-intellihide=true
+hot-corner=true
+keep-round-corners=false
+mouse-sensitive=true
+mouse-sensitive-fullscreen-window=true
+mouse-triggers-overview=false
+pressure-threshold=0
+pressure-timeout=0
+
 [just-perfection]
 animation=2
+panel=true
 panel-in-overview=true
 panel-notification-icon=true
 power-icon=true
+startup-status=0
 support-notifier-type=0
 window-picker-icon=true
 workspace-switcher-size=0
+
+[nightthemeswitcher/time]
+location=(51.518099999999997, -0.071418899999999993)
+nightthemeswitcher-ondemand-keybinding=['']
+sunrise=5.2432469109487059
+sunset=20.98503463300294
+
+[paperwm]
+last-used-display-server='Wayland'
+minimap-shade-opacity=159
+open-window-position=0
+restore-attach-modal-dialogs=''
+restore-edge-tiling=''
+restore-keybinds='{}'
+restore-workspaces-only-on-primary=''
+show-window-position-bar=false
+show-workspace-indicator=true
+
+[paperwm/workspaces]
+list=['7b3127de-0095-46cc-a088-cf3a0eef6ff5', '63c23ff5-7cfb-4d4d-9b70-60dc211b30da', 'c9469b91-d238-4ecc-a62a-b545ee9a5b1a', '413bd39c-4096-40eb-b222-3ffbae895a7e', 'd594c04e-690c-44e6-8b4d-bb430485dcdb']
+
+[paperwm/workspaces/413bd39c-4096-40eb-b222-3ffbae895a7e]
+index=3
+
+[paperwm/workspaces/63c23ff5-7cfb-4d4d-9b70-60dc211b30da]
+index=1
+
+[paperwm/workspaces/7b3127de-0095-46cc-a088-cf3a0eef6ff5]
+index=0
+name='Workspace 1'
+
+[paperwm/workspaces/c9469b91-d238-4ecc-a62a-b545ee9a5b1a]
+index=2
+
+[paperwm/workspaces/d594c04e-690c-44e6-8b4d-bb430485dcdb]
+index=4
 
 [space-bar/appearance]
 application-styles='.space-bar {\n  -natural-hpadding: 12px;\n}\n\n.space-bar-workspace-label.active {\n  margin: 0 4px;\n  background-color: rgba(255,255,255,0.3);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,1);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}\n\n.space-bar-workspace-label.inactive.empty {\n  margin: 0 4px;\n  background-color: rgba(0,0,0,0);\n  color: rgba(255,255,255,0.5);\n  border-color: rgba(0,0,0,0);\n  font-weight: 700;\n  border-radius: 4px;\n  border-width: 0px;\n  padding: 3px 8px;\n}'
@@ -82,14 +133,14 @@ move-workspace-left=@as []
 move-workspace-right=@as []
 
 [space-bar/state]
-version=34
+version=39
 
 [switcher]
 activate-after-ms=uint32 0
 activate-by-key=uint32 0
 fade-enable=true
 font-size=uint32 20
-launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":10,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":13,"steam.desktop":8,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":16,"org.gnome.Nautilus.desktop":1,"org.gnome.Settings.desktop":4,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1,"org.gnome.Snapshot.desktop":1,"org.fedoraproject.MediaWriter.desktop":2,"gnome-about-panel.desktop":1}'
+launcher-stats='{"org.mozilla.firefox.desktop":2,"org.gnome.Ptyxis.desktop":4,"kitty.desktop":17,"vivaldi_vivaldi-stable.desktop":1,"1password.desktop":2,"com.mattjakeman.ExtensionManager.desktop":15,"steam.desktop":16,"io.github.Cookiiieee.WSelector.desktop":2,"solaar.desktop":1,"expressvpn.desktop":16,"org.gnome.Nautilus.desktop":2,"org.gnome.Settings.desktop":4,"org.gnome.Software.desktop":2,"org.onlyoffice.desktopeditors.desktop":1,"com.vivaldi.Vivaldi.desktop":1,"org.gnome.tweaks.desktop":1,"org.gnome.Snapshot.desktop":2,"org.fedoraproject.MediaWriter.desktop":2,"gnome-about-panel.desktop":1,"com.mitchellh.ghostty.desktop":22,"org.gnome.Boxes.desktop":2,"proton.vpn.app.gtk.desktop":1}'
 matching=uint32 1
 ordering=uint32 1
 show-executables=true

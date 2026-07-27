@@ -3,7 +3,7 @@ import { AppearancePage } from './preferences/AppearancePage.js';
 import { BehaviorPage } from './preferences/BehaviorPage.js';
 import { ShortcutsPage } from './preferences/ShortcutsPage.js';
 export default class SpaceBarExtensionPreferences extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
+    async fillPreferencesWindow(window) {
         [new BehaviorPage(this), new AppearancePage(this), new ShortcutsPage(this)].forEach((pageObject) => {
             pageObject.window = window;
             pageObject.init();

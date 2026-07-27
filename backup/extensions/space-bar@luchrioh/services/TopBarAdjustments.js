@@ -1,10 +1,7 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Settings } from './Settings.js';
 export class TopBarAdjustments {
-    constructor() {
-        this._settings = Settings.getInstance();
-        this._didHideActivitiesButton = false;
-    }
+    static _instance;
     static init() {
         TopBarAdjustments._instance = new TopBarAdjustments();
         TopBarAdjustments._instance.init();
@@ -13,6 +10,8 @@ export class TopBarAdjustments {
         TopBarAdjustments._instance.destroy();
         TopBarAdjustments._instance = null;
     }
+    _settings = Settings.getInstance();
+    _didHideActivitiesButton = false;
     init() {
         this._settings.systemWorkspaceIndicator.subscribe((systemWorkspaceIndicator) => {
             if (systemWorkspaceIndicator) {
@@ -27,14 +26,14 @@ export class TopBarAdjustments {
         this._restoreSystemWorkspaceIndicator();
     }
     _hideSystemWorkspaceIndicator() {
-        const activitiesButton = Main.panel.statusArea['activities'];
+        const activitiesButton = Main.panel.statusArea.activities;
         if (activitiesButton && !Main.sessionMode.isLocked && activitiesButton.is_visible()) {
             activitiesButton.hide();
             this._didHideActivitiesButton = true;
         }
     }
     _restoreSystemWorkspaceIndicator() {
-        const activitiesButton = Main.panel.statusArea['activities'];
+        const activitiesButton = Main.panel.statusArea.activities;
         if (activitiesButton && this._didHideActivitiesButton) {
             activitiesButton.show();
             this._didHideActivitiesButton = false;

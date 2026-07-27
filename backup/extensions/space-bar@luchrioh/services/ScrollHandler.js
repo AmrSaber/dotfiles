@@ -3,12 +3,11 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Settings } from './Settings.js';
 import { Workspaces } from './Workspaces.js';
 export class ScrollHandler {
-    constructor() {
-        this._ws = Workspaces.getInstance();
-        this._settings = Settings.getInstance();
-        this._lastScrollTime = 0;
-        this._panelButton = null;
-    }
+    _ws = Workspaces.getInstance();
+    _settings = Settings.getInstance();
+    _disconnectBinding;
+    _lastScrollTime = 0;
+    _panelButton = null;
     init(panelButtonSubject) {
         panelButtonSubject.subscribe((panelButton) => (this._panelButton = panelButton));
         const panelButtonCallback = (panelButton) => this._registerScroll(panelButton);

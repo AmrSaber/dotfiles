@@ -1,8 +1,6 @@
 import GLib from 'gi://GLib';
 export class Timeout {
-    constructor() {
-        this._timeoutId = null;
-    }
+    _timeoutId = null;
     destroy() {
         this.clearTimeout();
     }

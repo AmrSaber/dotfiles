@@ -121,8 +121,8 @@ function _setActive(active) {
         _deactiveTimer();
     }
 
-    //if (this._loginSession)
-        //this._loginSession.SetLockedHintRemote(active);
+    if (this._loginSession)
+        this._loginSession.SetLockedHintRemote(active);
 
     this._syncInhibitor();
 }

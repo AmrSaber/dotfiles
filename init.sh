@@ -37,7 +37,7 @@ brew trust --tap amrsaber/tap 2>/dev/null || true
 # Install needed brew packages
 brew_packages=(
   neovim just mise zellij stow gum kv jumper jq starship opencode gh # Core tools
-  bat fd ripgrep eza                                                 # Modern alternatives
+  bat fd ripgrep eza amrsaber/tap/timer                              # Modern alternatives
   tlrc fzf yazi yq                                                   # Quality of life
   fastfetch btop shellcheck                                          # Extras
   ffmpeg sevenzip poppler resvg imagemagick                          # Yazi tool-kit to provide previews
