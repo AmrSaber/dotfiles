@@ -63,7 +63,7 @@ update:
   fi
   echo
 
-  coloured "Updating mise"
+  coloured 2 "Updating mise"
   if command -v mise &>/dev/null; then
     mise up
   else
