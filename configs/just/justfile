@@ -71,6 +71,10 @@ update:
   fi
   echo
 
+  coloured 2 "Updating global npm packages"
+  npm i -g npm @playwright/mcp chrome-devtools-mcp >/dev/null
+  echo
+
   coloured 2 "Updating bin"
   if command -v bin &>/dev/null; then
     bin update -y
