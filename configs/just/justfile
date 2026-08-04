@@ -65,7 +65,7 @@ update:
 
   coloured 2 "Updating mise"
   if command -v mise &>/dev/null; then
-    mise up
+    mise up --inactive
   else
     coloured 1 "mise not found"
   fi
