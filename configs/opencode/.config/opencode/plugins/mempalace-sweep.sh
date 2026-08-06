@@ -36,6 +36,9 @@ if [ "$gap" -gt 50 ] 2>/dev/null; then
     # shellcheck disable=SC2012  # timestamp-suffixed names are ls-safe
     archive=$(ls -dt "$MP_PALACE".pre-rebuild-* 2>/dev/null | head -1)
     [ -n "$archive" ] && rm -rf "$archive"
+    # The rebuild recreates the collection without the embedder identity, so
+    # re-record it — otherwise every subsequent sweep warns about it.
+    mempalace palace set-embedder --model minilm >>"$MP_LOG" 2>&1
     echo "[$(date -Is)] self-heal: rebuild succeeded; archive removed" >>"$MP_LOG"
   else
     # Restore the untouched original and halt: retrying can't fix corrupt sqlite,
