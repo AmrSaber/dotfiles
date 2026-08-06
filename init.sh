@@ -41,7 +41,7 @@ brew_packages=(
   tlrc fzf yazi yq                                                   # Quality of life
   fastfetch btop shellcheck                                          # Extras
   ffmpeg sevenzip poppler resvg imagemagick                          # Yazi tool-kit to provide previews
-  go python                                                          # Programming languages
+  go python uv                                                       # Programming languages
 )
 
 brew_casks=(
@@ -69,6 +69,11 @@ if ! command -v bin &>/dev/null; then
   else
     echo 'bin was not installed successfully!' >&2
   fi
+fi
+
+# Install mempalace (memory palace for the opencode plugin) if not installed
+if ! command -v mempalace &>/dev/null; then
+  bash "$SCRIPTS_DIR/install-mempalace.sh"
 fi
 
 # Install oh-my-zsh if not installed
