@@ -31,7 +31,7 @@ RUN NO_SYSTEM=1 HEADLESS=1 NO_STOW=1 ./init.sh
 # Copy configs and stow them
 COPY --chown=user . .
 RUN rm -f ~/.zshrc
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && just stow-all
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && just stow
 
 WORKDIR /home/user
 
