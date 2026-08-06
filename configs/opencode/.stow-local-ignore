@@ -1,0 +1,10 @@
+# Files stow must NOT symlink into $HOME. These are plugin-development / install
+# artifacts, not config. Defining this file disables stow's built-in default
+# ignore list, so every artifact must be listed explicitly. Patterns are Perl
+# regexes matched against the basename; '.' is escaped to match a literal dot.
+
+node_modules
+package\.json
+package-lock\.json
+bun\.lock
+\.gitignore
