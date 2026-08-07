@@ -1,0 +1,42 @@
+{
+  "servers": {
+    // Development tools
+    "playwright": {
+      "description": "Browser driver (Playwright): navigate, click, type, fill forms, a11y snapshot, screenshots, run JS, console/network. Use to load and interact with a running web app (e.g. Next.js on localhost). Output files are saved to /tmp/playwright-output",
+      "server": {
+        "command": [
+          "playwright-mcp",
+          "--headless",
+          "--browser",
+          "chromium",
+          "--output-dir",
+          "/tmp/playwright-output"
+        ],
+        "environment": {
+          "LD_PRELOAD": "/usr/lib64/libstdc++.so.6.0.33"
+        }
+      }
+    },
+    "chrome-devtools": {
+      "description": "Browser debugger (Chrome DevTools): performance traces, Lighthouse audits, network waterfalls, console stacks, heap snapshots. Use to diagnose why a web page misbehaves after loading/interaction.",
+      "server": {
+        "command": [
+          "sh",
+          "-c",
+          "exec chrome-devtools-mcp --headless --executablePath \"$HOME/.cache/ms-playwright/chromium-1229/chrome-linux64/chrome\""
+        ],
+        "environment": {
+          "LD_PRELOAD": "/usr/lib64/libstdc++.so.6.0.33"
+        }
+      }
+    },
+
+    // Utils
+    "mempalace": {
+      "description": "Persistent memory palace: knowledge graph of durable facts (people, projects, decisions, config), verbatim drawers (search/store notes), cross-wing tunnels, agent diaries, mining directories. Use to recall or record durable facts and past context.",
+      "server": {
+        "command": ["mempalace-mcp"]
+      }
+    }
+  }
+}
