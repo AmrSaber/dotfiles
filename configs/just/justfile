@@ -72,7 +72,8 @@ update:
   echo
 
   coloured 2 "Updating global npm packages"
-  npm i -g npm @playwright/mcp chrome-devtools-mcp >/dev/null
+  npm config set allow-scripts=node-pty,terminal-driver-mcp --location=user
+  npm i -g npm @playwright/mcp chrome-devtools-mcp terminal-driver-mcp >/dev/null
   echo
 
   coloured 2 "Updating bin"

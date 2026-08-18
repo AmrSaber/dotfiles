@@ -2,6 +2,7 @@
   "servers": {
     // Development tools
     "playwright": {
+      "spawn": "lazy",
       "description": "Browser driver (Playwright): navigate, click, type, fill forms, a11y snapshot, screenshots, run JS, console/network. Use to load and interact with a running web app (e.g. Next.js on localhost). Output files are saved to /tmp/playwright-output",
       "server": {
         "command": [
@@ -18,6 +19,7 @@
       }
     },
     "chrome-devtools": {
+      "spawn": "lazy",
       "description": "Browser debugger (Chrome DevTools): performance traces, Lighthouse audits, network waterfalls, console stacks, heap snapshots. Use to diagnose why a web page misbehaves after loading/interaction.",
       "server": {
         "command": [
@@ -28,6 +30,13 @@
         "environment": {
           "LD_PRELOAD": "/usr/lib64/libstdc++.so.6.0.33"
         }
+      }
+    },
+    "terminal-driver": {
+      "spawn": "lazy",
+      "description": "Terminal/TUI driver (PTY + headless emulation): launch and drive interactive, full-screen terminal apps (nvim, htop, REPLs, installers, git rebase -i), read the rendered screen as text, send keystrokes/mouse, wait for text/idle, assert, and screenshot. Use for anything interactive or full-screen that a plain fire-and-forget shell command can't handle.",
+      "server": {
+        "command": ["terminal-driver-mcp"]
       }
     },
 
