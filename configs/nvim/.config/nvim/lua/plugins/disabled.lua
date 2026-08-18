@@ -1,6 +1,6 @@
 local system = require("config.system")
 
--- Disable treesitter on AL2
+-- Disable treesitter on AL2 (old toolchain can't build the parsers)
 local enable_treesitter = not system.is_al2()
 
 return {

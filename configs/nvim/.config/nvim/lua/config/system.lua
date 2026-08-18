@@ -8,7 +8,8 @@ return {
 
     local lines = vim.fn.readfile(os_file)
     for _, line in ipairs(lines) do
-      if line:find("amazon_linux:2", 1, true) then
+      -- trailing colon so this matches AL2 (`amazon_linux:2:`) but not AL2023 (`amazon_linux:2023:`)
+      if line:find("amazon_linux:2:", 1, true) then
         return true
       end
     end
