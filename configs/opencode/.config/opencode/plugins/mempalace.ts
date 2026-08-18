@@ -32,6 +32,17 @@
 //       the whole sessions dir. Detached so it survives opencode being GC'd/killed
 //       right after idle; coalesced so many simultaneous idles collapse to one
 //       chroma writer instead of starving readers. See launchDetachedSweep.
+//   (D) tool.kg_{add,invalidate,supersede} — lock-proof KG writers. The mempalace
+//       MCP guards ALL its mutating tools behind a single per-palace writer lease
+//       intended to stop concurrent Chroma clients desyncing their in-memory index.
+//       But the knowledge graph is a SEPARATE WAL-mode sqlite DB that never touches
+//       Chroma, so that lease shouldn't gate KG writes — yet it does, so a second
+//       concurrent session gets "Peer MCP writer active" and cannot record facts
+//       (upstream bug: MemPalace/mempalace#2297). These tools write straight to
+//       knowledge_graph.sqlite3 via mempalace's OWN KnowledgeGraph class (same
+//       entity-id slugify + dedup + temporal logic), so they succeed regardless of
+//       the lease and stay schema-identical to the MCP tools. Named distinctly from
+//       the MCP mempalace_kg_* tools so the system prompt can steer writes to these.
 //
 // Why the entity list lives in messages.transform, not system.transform: the
 // system prompt is cached per session, so an entity list injected there would go
@@ -56,10 +67,13 @@
 // Tunable: MEMPALACE_SESSION_TTL_DAYS (default 7; 0 = keep forever).
 
 import type { Plugin } from '@opencode-ai/plugin';
+import { tool } from '@opencode-ai/plugin';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { mkdir, writeFile, readFile, readdir, stat, unlink } from 'node:fs/promises';
+
+const z = tool.schema;
 
 const TTL_DAYS = 7;
 
@@ -72,6 +86,43 @@ const SWEEP_LOCK = join(SESSIONS_DIR, 'sweep.lock');
 const SWEEP_DIRTY = join(SESSIONS_DIR, 'sweep.dirty');
 const KG_DB = join(homedir(), '.mempalace', 'knowledge_graph.sqlite3');
 const PALACE_CHROMA_DB = join(PALACE_DIR, 'chroma.sqlite3');
+
+// Python interpreter of the uv-tool mempalace install — used to drive its
+// KnowledgeGraph class directly for the KG-writer tools. Override with
+// MEMPALACE_PYTHON if installed elsewhere. KG_DB above is the same path the MCP
+// server resolves when launched without --palace (its DEFAULT_KG_PATH) and the
+// same DB the entity-list injection reads, so writes here are seen by both.
+const MEMPALACE_PY =
+  process.env.MEMPALACE_PYTHON ||
+  join(homedir(), '.local', 'share', 'uv', 'tools', 'mempalace', 'bin', 'python');
+
+// One-shot scripts driving mempalace's own KnowledgeGraph. Every value arrives as
+// a distinct argv entry (python -c sets sys.argv[0] = '-c'), so the runner never
+// concatenates untrusted text into the program. argv[1] is always the DB path.
+const KG_ADD_PY = [
+  'import sys',
+  'from mempalace.knowledge_graph import KnowledgeGraph',
+  '_, db, subject, predicate, obj, valid_from, valid_to = sys.argv',
+  'kg = KnowledgeGraph(db_path=db)',
+  'print(kg.add_triple(subject, predicate, obj, valid_from=valid_from or None, valid_to=valid_to or None))',
+].join('\n');
+
+const KG_INVALIDATE_PY = [
+  'import sys',
+  'from mempalace.knowledge_graph import KnowledgeGraph',
+  '_, db, subject, predicate, obj, ended = sys.argv',
+  'kg = KnowledgeGraph(db_path=db)',
+  'kg.invalidate(subject, predicate, obj, ended=ended or None)',
+  'print("invalidated")',
+].join('\n');
+
+const KG_SUPERSEDE_PY = [
+  'import sys',
+  'from mempalace.knowledge_graph import KnowledgeGraph',
+  '_, db, subject, predicate, old_obj, new_obj, at = sys.argv',
+  'kg = KnowledgeGraph(db_path=db)',
+  'print(kg.supersede(subject, predicate, old_obj, new_obj, at=at or None))',
+].join('\n');
 
 // Circuit breaker: the worker writes this only when a rebuild-from-sqlite fails
 // (sqlite itself likely corrupt, so retrying can't help). Its presence halts all
@@ -103,16 +154,24 @@ const MEMORY_PROTOCOL = [
   'a matching (or related) entity is listed, `mempalace_kg_query` it BEFORE answering — never guess.',
   'For prose/detail the graph does not hold, `mempalace_search` the verbatim drawers.',
   '',
+  '### Writing to the knowledge graph — use the `kg_*` tools, NOT the MCP ones',
+  'For all KG WRITES use the plugin-provided tools **`kg_add`**, **`kg_invalidate`**, and **`kg_supersede`**.',
+  'Do NOT use the built-in MCP `mempalace_kg_add` / `mempalace_kg_invalidate` / `mempalace_kg_supersede`:',
+  'the MCP server refuses those whenever another session holds its writer lease ("Peer MCP writer active"),',
+  'even though KG writes are safe (the graph is a separate sqlite DB, not the locked Chroma store — see',
+  'MemPalace/mempalace#2297). The `kg_*` tools write directly and always work, with identical dedup and',
+  'temporal semantics. (Reads still go through `mempalace_kg_query` / `mempalace_search`.)',
+  '',
   '### Keep the knowledge graph current (IMPORTANT)',
   'The graph is the source of truth for durable facts. Keeping it accurate is a standing,',
   'ongoing responsibility — record facts as they emerge, do not wait until the end of the session.',
   '- When a durable fact is established or learned (a relationship, ownership, config, version,',
-  '  decision, setup detail, preference), add it immediately with `mempalace_kg_add`.',
+  '  decision, setup detail, preference), add it immediately with `kg_add`.',
   '- Prefer attaching facts to entities ALREADY in the injected list — reusing an existing entity',
-  '  keeps the graph connected and adds no stale noise (kg_add dedups on subject+predicate+object,',
+  '  keeps the graph connected and adds no stale noise (`kg_add` dedups on subject+predicate+object,',
   '  so re-adding a fact that already exists is a harmless no-op). Write early and often.',
-  '- When a fact stops being true (something changed, was replaced, or removed), call',
-  '  `mempalace_kg_invalidate` on the old fact and `mempalace_kg_add` for the new one.',
+  '- When a fact stops being true, call `kg_invalidate` on it; when a single-valued fact CHANGES to a',
+  '  new value (model, version, path…), use `kg_supersede` to swap old→new at one atomic boundary.',
   '- Record only durable, factual relationships — not transient chatter or in-progress steps.',
 ].join('\n');
 
@@ -255,10 +314,94 @@ export const MemPalace: Plugin = async ({ client, $ }) => {
     }
   }
 
+  // Drive one of the KG-writer scripts above. Values pass as argv (Bun's $
+  // quotes each interpolated array element as a separate argument), so nothing
+  // untrusted is concatenated into the program or a shell string. KG_DB is
+  // always argv[1]. Best-effort surface: returns a human string either way.
+  async function runKgWriter(script: string, args: string[]): Promise<string> {
+    const res = await $`${MEMPALACE_PY} -c ${script} ${KG_DB} ${args}`.quiet().nothrow();
+    if (res.exitCode !== 0) {
+      const err = res.stderr.toString().trim() || `exit code ${res.exitCode}`;
+      return `KG write FAILED: ${err}`;
+    }
+    return res.stdout.toString().trim();
+  }
+
   return {
     // (A) Memory Protocol — always injected (free, non-blocking).
     'experimental.chat.system.transform': async (_input, output) => {
       output.system.push(MEMORY_PROTOCOL);
+    },
+
+    // (D) Lock-proof KG writers — WORKAROUND for MemPalace/mempalace#2297
+    // (github.com/MemPalace/mempalace/issues/2297): the MCP server gates ALL
+    // mutating tools (incl. kg_add/kg_invalidate/kg_supersede) behind a single
+    // per-palace writer lease meant for Chroma, even though the KG is a separate
+    // WAL sqlite DB that never touches Chroma. So a second concurrent session is
+    // told "Peer MCP writer active" and cannot record facts. These tools call
+    // mempalace's OWN KnowledgeGraph class directly (identical entity-id slugify,
+    // dedup, and temporal semantics), targeting the same DB the MCP + entity
+    // injection use — so they succeed regardless of the lease and stay
+    // schema-identical. Prefer these over the MCP mempalace_kg_* tools for
+    // writes; drop them once #2297 is fixed upstream.
+    tool: {
+      kg_add: tool({
+        description:
+          'Add a durable fact (subject → predicate → object) to the MemPalace knowledge graph. ' +
+          'Lock-proof: writes directly to the KG sqlite via mempalace, so it works even when the ' +
+          'built-in mempalace MCP kg_add is unavailable or refuses with "Peer MCP writer active". ' +
+          'Use THIS instead of the MCP mempalace_kg_add. Dedups on subject+predicate+object.',
+        args: {
+          subject: z.string().describe("Entity the fact is about, e.g. 'aaj-reviewer'"),
+          predicate: z.string().describe("Relationship/verb, e.g. 'documented_by', 'uses_backend'"),
+          object: z.string().describe('The value/target of the relationship'),
+          valid_from: z.string().optional().describe('Start date YYYY-MM-DD or UTC datetime (optional)'),
+          valid_to: z.string().optional().describe('End date/datetime for a historical fact (optional)'),
+        },
+        async execute({ subject, predicate, object, valid_from, valid_to }) {
+          const id = await runKgWriter(KG_ADD_PY, [subject, predicate, object, valid_from ?? '', valid_to ?? '']);
+          if (id.startsWith('KG write FAILED')) return id;
+          return `Added: ${subject} → ${predicate} → ${object} (triple ${id})`;
+        },
+      }),
+
+      kg_invalidate: tool({
+        description:
+          'Mark an existing KG fact (subject → predicate → object) as no longer valid (sets valid_to). ' +
+          'Lock-proof direct-sqlite write; use instead of the MCP mempalace_kg_invalidate. ' +
+          'For a value that CHANGED to a new one, prefer kg_supersede.',
+        args: {
+          subject: z.string(),
+          predicate: z.string(),
+          object: z.string().describe('The current object value of the fact to end'),
+          ended: z.string().optional().describe('End date YYYY-MM-DD or UTC datetime (default: today)'),
+        },
+        async execute({ subject, predicate, object, ended }) {
+          const out = await runKgWriter(KG_INVALIDATE_PY, [subject, predicate, object, ended ?? '']);
+          if (out.startsWith('KG write FAILED')) return out;
+          return `Invalidated: ${subject} → ${predicate} → ${object}`;
+        },
+      }),
+
+      kg_supersede: tool({
+        description:
+          'Atomically replace a single-valued fact: close (subject → predicate → old_object) and open ' +
+          '(subject → predicate → new_object) at one shared boundary. Use THIS (not invalidate+add) ' +
+          'when a fact CHANGES value (model, version, employer, path…). Lock-proof direct-sqlite write; ' +
+          'use instead of the MCP mempalace_kg_supersede.',
+        args: {
+          subject: z.string(),
+          predicate: z.string(),
+          old_object: z.string().describe('The current (soon-to-be-old) value'),
+          new_object: z.string().describe('The new value'),
+          at: z.string().optional().describe('Boundary date YYYY-MM-DD or UTC datetime (default: now)'),
+        },
+        async execute({ subject, predicate, old_object, new_object, at }) {
+          const id = await runKgWriter(KG_SUPERSEDE_PY, [subject, predicate, old_object, new_object, at ?? '']);
+          if (id.startsWith('KG write FAILED')) return id;
+          return `Superseded: ${subject} → ${predicate} → ${old_object} ⇒ ${new_object} (triple ${id})`;
+        },
+      }),
     },
 
     // (B) Live KG entity list — fresh routing signal appended to the latest user
