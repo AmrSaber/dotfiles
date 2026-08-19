@@ -76,6 +76,10 @@ update:
   npm i -g npm @playwright/mcp chrome-devtools-mcp terminal-driver-mcp >/dev/null
   echo
 
+  coloured 2 "Updating global python packages"
+  uv tool upgrade --all
+  echo
+
   coloured 2 "Updating bin"
   if command -v bin &>/dev/null; then
     bin update -y
