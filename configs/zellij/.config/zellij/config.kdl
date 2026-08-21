@@ -155,9 +155,47 @@ keybinds clear-defaults=true {
             SwitchToMode "locked"
         }
     }
+
+    // Locked mode short-cuts
     shared_among "normal" "locked" {
+        // Clear
+        bind "Ctrl k" { Write 12; }
+
+        // Resize
         bind "Alt +" { Resize "Increase"; }
+        bind "Alt =" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
+
+        // Layout
+        bind "Alt [" { PreviousSwapLayout; }
+        bind "Alt ]" { NextSwapLayout; }
+
+        // Move between panes
+        bind "Alt h" { MoveFocusOrTab "left"; }
+        bind "Alt j" { MoveFocus "down"; }
+        bind "Alt k" { MoveFocus "up"; }
+        bind "Alt l" { MoveFocusOrTab "right"; }
+
+        // Pane groups
+        bind "Alt p" { TogglePaneInGroup; }
+        bind "Alt Shift p" { ToggleGroupMarking; }
+
+        // New pane
+        bind "Alt r" { NewPane "right"; }
+        bind "Alt d" { NewPane "down"; }
+        bind "Alt s" { NewPane "stacked"; }
+
+        // Pane focus
+        bind "Alt e" { TogglePaneEmbedOrFloating; }
+        bind "Alt w" { ToggleFloatingPanes; }
+        bind "Alt f" { ToggleFocusFullscreen; }
+
+        // Tabs
+        bind "Alt t" { NewTab; }
+        bind "Alt o" { MoveTab "right"; }
+        bind "Alt i" { MoveTab "left"; }
+
+        // Move to tabs
         bind "Alt 1" { GoToTab 1; }
         bind "Alt 2" { GoToTab 2; }
         bind "Alt 3" { GoToTab 3; }
@@ -167,24 +205,6 @@ keybinds clear-defaults=true {
         bind "Alt 7" { GoToTab 7; }
         bind "Alt 8" { GoToTab 8; }
         bind "Alt 9" { GoToTab 9; }
-        bind "Alt =" { Resize "Increase"; }
-        bind "Alt [" { PreviousSwapLayout; }
-        bind "Alt ]" { NextSwapLayout; }
-        bind "Alt d" { NewPane "down"; }
-        bind "Alt f" { ToggleFocusFullscreen; }
-        bind "Alt h" { MoveFocusOrTab "left"; }
-        bind "Alt i" { MoveTab "left"; }
-        bind "Alt j" { MoveFocus "down"; }
-        bind "Ctrl k" { Write 12; }
-        bind "Alt k" { MoveFocus "up"; }
-        bind "Alt l" { MoveFocusOrTab "right"; }
-        bind "Alt o" { MoveTab "right"; }
-        bind "Alt p" { TogglePaneInGroup; }
-        bind "Alt Shift p" { ToggleGroupMarking; }
-        bind "Alt r" { NewPane "right"; }
-        bind "Alt s" { NewPane "stacked"; }
-        bind "Alt t" { NewTab; }
-        bind "Alt w" { ToggleFloatingPanes; }
     }
     shared {
         bind "F1" {
