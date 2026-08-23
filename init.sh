@@ -84,5 +84,5 @@ fi
 # Stow all the configurations
 if [ -z "${NO_STOW:-}" ]; then
   rm -f ~/.zshrc
-  just stow-all
+  just stow
 fi
