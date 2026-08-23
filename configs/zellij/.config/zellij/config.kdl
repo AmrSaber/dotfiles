@@ -159,7 +159,7 @@ keybinds clear-defaults=true {
     // Locked mode short-cuts
     shared_among "normal" "locked" {
         // Clear
-        bind "Ctrl k" { Write 12; }
+        bind "Ctrl k" { Clear; Write 12; }
 
         // Resize
         bind "Alt +" { Resize "Increase"; }
