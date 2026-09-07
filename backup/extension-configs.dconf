@@ -76,10 +76,10 @@ window-picker-icon=true
 workspace-switcher-size=0
 
 [nightthemeswitcher/time]
-location=(51.518099999999997, -0.071418899999999993)
+location=(52.225888882053255, 0.111503)
 nightthemeswitcher-ondemand-keybinding=['']
-sunrise=5.2432469109487059
-sunset=20.98503463300294
+sunrise=6.3385134487006667
+sunset=19.586966973107963
 
 [paperwm]
 last-used-display-server='Wayland'

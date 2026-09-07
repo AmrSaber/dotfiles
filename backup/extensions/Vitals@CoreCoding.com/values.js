@@ -24,8 +24,10 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+
+import {sensorCatalog, colorsKeyForSensor} from './helpers/catalog.js';
+import {getUsageColor} from './helpers/colors.js';
 
 const cbFun = (d, c) => {
     let bb = d[1] % c[0],
@@ -34,6 +36,10 @@ const cbFun = (d, c) => {
 
     return [d[0] + aa, bb];
 };
+
+const decimal = [ 'B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB' ];
+const binary = [ 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB' ];
+const hertz = [ 'Hz', 'KHz', 'MHz', 'GHz', 'THz', 'PHz', 'EHz', 'ZHz' ];
 
 export const Values = GObject.registerClass({
        GTypeName: 'Values',
@@ -47,13 +53,13 @@ export const Values = GObject.registerClass({
         this._networkSpeeds = {};
 
         this._history = {};
-        //this._history2 = {};
         this.resetHistory();
     }
 
-    _legible(value, sensorClass) {
+    _legible(value, sensorClass, type, sensorKey = null) {
         let unit = 1000;
-        if (value === null) return 'N/A';
+        if (value === null)
+            return { text: 'N/A', style: '' };
         let use_higher_precision = this._settings.get_boolean('use-higher-precision');
         let memory_measurement = this._settings.get_int('memory-measurement')
         let storage_measurement = this._settings.get_int('storage-measurement')
@@ -62,10 +68,6 @@ export const Values = GObject.registerClass({
         let format = '';
         let ending = '';
         let exp = 0;
-
-        var decimal = [ 'B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB' ];
-        var binary = [ 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB' ];
-        var hertz = [ 'Hz', 'KHz', 'MHz', 'GHz', 'THz', 'PHz', 'EHz', 'ZHz' ];
 
         switch (sensorClass) {
             case 'percent':
@@ -141,11 +143,23 @@ export const Values = GObject.registerClass({
 
                 break;
             case 'speed':
+                let fixed_unit = this._settings.get_int('network-speed-unit');
+
                 if (value > 0) {
                     if (use_bps) value *= 8;
-                    exp = Math.floor(Math.log(value) / Math.log(unit));
-                    if (value >= Math.pow(unit, exp) * (unit - 0.05)) exp++;
-                    value = parseFloat((value / Math.pow(unit, exp)));
+
+                    if (fixed_unit > 0) {
+                        // fixed unit: force to K (exp=1) or M (exp=2)
+                        exp = fixed_unit;
+                        value = parseFloat((value / Math.pow(unit, exp)));
+                    } else {
+                        // auto: current behavior
+                        exp = Math.floor(Math.log(value) / Math.log(unit));
+                        if (value >= Math.pow(unit, exp) * (unit - 0.05)) exp++;
+                        value = parseFloat((value / Math.pow(unit, exp)));
+                    }
+                } else {
+                    exp = 0;
                 }
 
                 format = (use_higher_precision)?'%.1f %s':'%.0f %s';
@@ -204,6 +218,7 @@ export const Values = GObject.registerClass({
                 break;
             case 'load':
                 format = (use_higher_precision)?'%.2f %s':'%.1f %s';
+                value = parseFloat(value);
                 break;
             case 'pcie':
                 let split = value.split('x');
@@ -215,7 +230,19 @@ export const Values = GObject.registerClass({
                 break;
         }
 
-        return format.format(value, ending).trim();
+        let numeric = (typeof value === 'number' && Number.isFinite(value)) ? value : null;
+        return {
+            text: format.format(value, ending).trim(),
+            style: this._styleFor(numeric, type, sensorClass, sensorKey),
+        };
+    }
+
+    _styleFor(numeric, type, format, sensorKey = null) {
+        let colorsKey = colorsKeyForSensor(type, format);
+        if (!colorsKey || numeric === null || !Number.isFinite(numeric))
+            return '';
+
+        return getUsageColor(numeric, this._settings.get_strv(colorsKey), sensorKey);
     }
 
     returnIfDifferent(dwell, label, value, type, format, key) {
@@ -233,21 +260,21 @@ export const Values = GObject.registerClass({
                 return output;
 
         // is the value different from last time?
-        let legible = this._legible(value, format);
+        let legible = this._legible(value, format, type, key);
 
         // don't return early when dealing with network traffic
         if (historyType != 'network-rx' && historyType != 'network-tx') {
             // only update when we are coming through for the first time, or if a value has changed
-            if (key in this._history[historyType] && this._history[historyType][key][0] == legible)
+            if (key in this._history[historyType] && this._history[historyType][key][0] == legible.text)
                 return output;
 
             // add label as it was sent from sensors class; type stays e.g. network-us for display/icons
-            output.push({ label, value: legible, type, key });
+            output.push({ label, value: legible.text, style: legible.style, type, key });
         }
 
         // save previous values to update screen on changes only
         let previousValue = this._history[historyType][key];
-        this._history[historyType][key] = [legible, value];
+        this._history[historyType][key] = [legible.text, value];
 
         // process average, min and max values
         if (type == 'temperature' || type == 'voltage' || type == 'fan') {
@@ -255,22 +282,50 @@ export const Values = GObject.registerClass({
 
             // show value in group even if there is one value present
             let sum = vals.reduce((a, b) => a + b);
-            let avg = this._legible(sum / vals.length, format);
-            output.push({ label: type, value: avg, type: type + '-group', key: '' });
+            let avg = this._legible(sum / vals.length, format, type, null);
+            output.push({
+                label: type,
+                value: avg.text,
+                style: avg.style,
+                type: type + '-group',
+                key: '',
+            });
 
             // If only one value is present, don't display avg, min and max
             if (vals.length > 1) {
-                output.push({ label: 'Average', value: avg, type, key: '__' + type + '_avg__' });
+                let avgKey = '__' + type + '_avg__';
+                avg = this._legible(sum / vals.length, format, type, avgKey);
+                output.push({
+                    label: 'Average',
+                    value: avg.text,
+                    style: avg.style,
+                    type,
+                    key: avgKey,
+                });
 
                 // calculate Minimum value
                 let min = Math.min(...vals);
-                min = this._legible(min, format);
-                output.push({ label: 'Minimum', value: min, type, key: '__' + type + '_min__' });
+                let minKey = '__' + type + '_min__';
+                let minFormatted = this._legible(min, format, type, minKey);
+                output.push({
+                    label: 'Minimum',
+                    value: minFormatted.text,
+                    style: minFormatted.style,
+                    type,
+                    key: minKey,
+                });
 
                 // calculate Maximum value
                 let max = Math.max(...vals);
-                max = this._legible(max, format);
-                output.push({ label: 'Maximum', value: max, type, key: '__' + type + '_max__' });
+                let maxKey = '__' + type + '_max__';
+                let maxFormatted = this._legible(max, format, type, maxKey);
+                output.push({
+                    label: 'Maximum',
+                    value: maxFormatted.text,
+                    style: maxFormatted.style,
+                    type,
+                    key: maxKey,
+                });
             }
         } else if (type == 'network-rx' || type == 'network-tx') {
             let direction = type.split('-')[1];
@@ -278,19 +333,49 @@ export const Values = GObject.registerClass({
             // appends total upload and download for all interfaces for #216
             let vals = Object.values(this._history[type]).map(x => parseFloat(x[1]));
             let sum = vals.reduce((partialSum, a) => partialSum + a, 0);
-            const memUnit = this._settings.get_int('memory-measurement') ? 1000 : 1024;
-            output.push({ label: 'Boot ' + direction, value: this._legible(sum, format), type, key: '__' + type + '_boot__' });
+            let bootKey = '__' + type + '_boot__';
+            let boot = this._legible(sum, format, type, bootKey);
+            output.push({
+                label: 'Boot ' + direction,
+                value: boot.text,
+                style: boot.style,
+                type,
+                key: bootKey,
+            });
 
-            // keeps track of session start point
-            if (!(key in this._networkSpeedOffset) || this._networkSpeedOffset[key] <= 0)
-                this._networkSpeedOffset[key] = sum;
+            // per-iface byte counter at first sight; session = sum of deltas (#234)
+            if (!(key in this._networkSpeedOffset))
+                this._networkSpeedOffset[key] = value;
 
-            // outputs session upload and download for all interfaces for #234
-            output.push({ label: 'Session ' + direction, value: this._legible(sum - this._networkSpeedOffset[key], format), type, key: '__' + type + '_ses__' });
+            let sessionBytes = 0;
+            for (let k in this._history[type]) {
+                let cur = parseFloat(this._history[type][k][1]);
+                sessionBytes += cur - (this._networkSpeedOffset[k] ?? cur);
+            }
 
-            // calculate speed for this interface
-            let speed = (value - previousValue[1]) / dwell;
-            output.push({ label, value: this._legible(speed, 'speed'), type, key });
+            let sessionKey = '__' + type + '_ses__';
+            let session = this._legible(sessionBytes, format, type, sessionKey);
+            output.push({
+                label: 'Session ' + direction,
+                value: session.text,
+                style: session.style,
+                type,
+                key: sessionKey,
+            });
+
+            // calculate speed for this interface. No previous sample, a zero
+            // baseline, or a counter reset (VPN/tunnel recycle) is not a rate.
+            let prevBytes = previousValue ? parseFloat(previousValue[1]) : 0;
+            let speed = (prevBytes && value >= prevBytes) ? (value - prevBytes) / dwell : 0;
+            let speedFormatted = this._legible(speed, 'speed', type, key);
+
+            output.push({
+                label,
+                value: speedFormatted.text,
+                style: speedFormatted.style,
+                type,
+                key,
+            });
 
             // store speed for Device report
             if (!(direction in this._networkSpeeds)) this._networkSpeeds[direction] = {};
@@ -306,10 +391,25 @@ export const Values = GObject.registerClass({
                 for (let iface in this._networkSpeeds[direction])
                     sumNum += parseFloat(this._networkSpeeds[direction][iface]);
 
-                let sum = this._legible(sumNum, 'speed');
-                output.push({ label: 'Device ' + direction, value: sum, type: 'network-' + direction, key: '__network-' + direction + '_max__' });
+                let deviceKey = '__network-' + direction + '_max__';
+                let device = this._legible(sumNum, 'speed', 'network-' + direction, deviceKey);
+                output.push({
+                    label: 'Device ' + direction,
+                    value: device.text,
+                    style: device.style,
+                    type: 'network-' + direction,
+                    key: deviceKey,
+                });
                 // append download speed to group itself
-                if (direction == 'rx') output.push({ label: type, value: sum, type: type + '-group', key: '' });
+                if (direction == 'rx') {
+                    output.push({
+                        label: type,
+                        value: device.text,
+                        style: device.style,
+                        type: type + '-group',
+                        key: '',
+                    });
+                }
             }
         }
 
@@ -325,8 +425,6 @@ export const Values = GObject.registerClass({
 
             this._history[sensor] = {};
             this._history[sensor + '-group'] = {};
-            //this._history2[sensor] = {};
-            //this._history2[sensor + '-group'] = {};
         }
 
         for(let i = 1; i <= numGpus; i++){
