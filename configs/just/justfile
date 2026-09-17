@@ -32,8 +32,8 @@ amend:
 
 # Update system
 update:
-  #!/usr/bin/env bash
-  coloured() { gum style --foreground "$@"; }
+  #!/usr/bin/env zsh
+  source ~/.zshrc
 
   coloured 2 "Updating system packages"
   if command -v dnf &>/dev/null; then
@@ -79,6 +79,12 @@ update:
   coloured 2 "Updating global python packages"
   uv tool upgrade --all
   echo
+
+  if command -v omz &>/dev/null; then
+    coloured 2 "Updating omz"
+    omz update
+    echo
+  fi
 
   coloured 2 "Updating bin"
   if command -v bin &>/dev/null; then
