@@ -6,7 +6,7 @@
 // no agent involvement, deterministic, verbatim. Claude/Codex get this for free
 // because their hosts persist a transcript JSONL that MemPalace can read; opencode
 // does not, so we reconstruct a Claude-style JSONL from the opencode server API
-// (client.session.messages) and feed it to `mempalace sweep`.
+// (session.context) and feed it to `mempalace sweep`.
 //
 // Why `sweep` (not `mine --mode convos`): sweep is message-granular, cursor-based,
 // and idempotent — re-running it on a transcript that has GROWN ingests only the
@@ -19,14 +19,13 @@
 // agents rarely reach any threshold.
 //
 // Behaviours:
-//   (A) experimental.chat.system.transform — inject the MemPalace Memory Protocol
-//       (query/write-often guidance). Always on, free.
-//   (B) experimental.chat.messages.transform — inject a FRESH list of the entities
-//       the knowledge graph currently knows about, anchored to the last user
-//       message (mirrors the jumper-inject pattern). This turns the read path from
+//   (A) session.context — inject the MemPalace Memory Protocol (query/write-often
+//       guidance). Always on, free.
+//   (B) session.context — inject a FRESH list of the entities the knowledge graph
+//       currently knows about. This turns the read path from
 //       "agent must remember the graph exists" into "agent can see what's in it and
 //       decide to kg_query" — the routing signal the graph otherwise lacks.
-//   (C) session.idle + experimental.session.compacting — deterministic capture:
+//   (C) session.idle + session.compaction — deterministic capture:
 //       render the session as Claude-style JSONL, write it, and poke a SINGLE
 //       coalescing detached sweeper (flock + dirty-marker settle loop) that sweeps
 //       the whole sessions dir. Detached so it survives opencode being GC'd/killed
@@ -44,12 +43,8 @@
 //       the lease and stay schema-identical to the MCP tools. Named distinctly from
 //       the MCP mempalace_kg_* tools so the system prompt can steer writes to these.
 //
-// Why the entity list lives in messages.transform, not system.transform: the
-// system prompt is cached per session, so an entity list injected there would go
-// stale as the graph changes mid-session. messages.transform fires per outgoing
-// LLM request and mutates only that payload (never written back to stored history),
-// so the model sees exactly ONE fresh copy per turn and nothing accumulates.
-// (See the jumper-inject plugin for the same reasoning applied to bookmarks.)
+// The context hook fires per primary LLM request and mutates only that request, so
+// the model sees exactly ONE fresh copy per turn and nothing accumulates.
 //
 // KG entity data source: read directly from ~/.mempalace/knowledge_graph.sqlite3.
 // mempalace has NO CLI verb (no `mempalace kg`) and NO MCP tool for dumping/merging
@@ -66,26 +61,35 @@
 //          MEMPALACE_INJECT_ENTITIES=false|0|no suppresses the entity-list injection.
 // Tunable: MEMPALACE_SESSION_TTL_DAYS (default 7; 0 = keep forever).
 
-import type { Plugin } from '@opencode-ai/plugin';
-import { tool } from '@opencode-ai/plugin';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
-import { mkdir, writeFile, readFile, readdir, stat, unlink } from 'node:fs/promises';
+import { Plugin } from "@opencode/plugin";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
+import {
+  mkdir,
+  writeFile,
+  readFile,
+  readdir,
+  stat,
+  unlink,
+} from "node:fs/promises";
 
-const z = tool.schema;
+const TTL_DAYS = Number.isFinite(Number(process.env.MEMPALACE_SESSION_TTL_DAYS))
+  ? Number(process.env.MEMPALACE_SESSION_TTL_DAYS)
+  : 7;
 
-const TTL_DAYS = 7;
+const SESSIONS_DIR = join(homedir(), ".mempalace", "opencode-sessions");
+const PALACE_DIR = join(homedir(), ".mempalace", "palace");
 
-const SESSIONS_DIR = join(homedir(), '.mempalace', 'opencode-sessions');
-const PALACE_DIR = join(homedir(), '.mempalace', 'palace');
-
-const SWEEP_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'mempalace-sweep.sh');
-const SWEEP_LOG = join(SESSIONS_DIR, 'sweep.log');
-const SWEEP_LOCK = join(SESSIONS_DIR, 'sweep.lock');
-const SWEEP_DIRTY = join(SESSIONS_DIR, 'sweep.dirty');
-const KG_DB = join(homedir(), '.mempalace', 'knowledge_graph.sqlite3');
-const PALACE_CHROMA_DB = join(PALACE_DIR, 'chroma.sqlite3');
+const SWEEP_SCRIPT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "mempalace-sweep.sh",
+);
+const SWEEP_LOG = join(SESSIONS_DIR, "sweep.log");
+const SWEEP_LOCK = join(SESSIONS_DIR, "sweep.lock");
+const SWEEP_DIRTY = join(SESSIONS_DIR, "sweep.dirty");
+const KG_DB = join(homedir(), ".mempalace", "knowledge_graph.sqlite3");
+const PALACE_CHROMA_DB = join(PALACE_DIR, "chroma.sqlite3");
 
 // Python interpreter of the uv-tool mempalace install — used to drive its
 // KnowledgeGraph class directly for the KG-writer tools. Override with
@@ -94,43 +98,52 @@ const PALACE_CHROMA_DB = join(PALACE_DIR, 'chroma.sqlite3');
 // same DB the entity-list injection reads, so writes here are seen by both.
 const MEMPALACE_PY =
   process.env.MEMPALACE_PYTHON ||
-  join(homedir(), '.local', 'share', 'uv', 'tools', 'mempalace', 'bin', 'python');
+  join(
+    homedir(),
+    ".local",
+    "share",
+    "uv",
+    "tools",
+    "mempalace",
+    "bin",
+    "python",
+  );
 
 // One-shot scripts driving mempalace's own KnowledgeGraph. Every value arrives as
 // a distinct argv entry (python -c sets sys.argv[0] = '-c'), so the runner never
 // concatenates untrusted text into the program. argv[1] is always the DB path.
 const KG_ADD_PY = [
-  'import sys',
-  'from mempalace.knowledge_graph import KnowledgeGraph',
-  '_, db, subject, predicate, obj, valid_from, valid_to = sys.argv',
-  'kg = KnowledgeGraph(db_path=db)',
-  'print(kg.add_triple(subject, predicate, obj, valid_from=valid_from or None, valid_to=valid_to or None))',
-].join('\n');
+  "import sys",
+  "from mempalace.knowledge_graph import KnowledgeGraph",
+  "_, db, subject, predicate, obj, valid_from, valid_to = sys.argv",
+  "kg = KnowledgeGraph(db_path=db)",
+  "print(kg.add_triple(subject, predicate, obj, valid_from=valid_from or None, valid_to=valid_to or None))",
+].join("\n");
 
 const KG_INVALIDATE_PY = [
-  'import sys',
-  'from mempalace.knowledge_graph import KnowledgeGraph',
-  '_, db, subject, predicate, obj, ended = sys.argv',
-  'kg = KnowledgeGraph(db_path=db)',
-  'kg.invalidate(subject, predicate, obj, ended=ended or None)',
+  "import sys",
+  "from mempalace.knowledge_graph import KnowledgeGraph",
+  "_, db, subject, predicate, obj, ended = sys.argv",
+  "kg = KnowledgeGraph(db_path=db)",
+  "kg.invalidate(subject, predicate, obj, ended=ended or None)",
   'print("invalidated")',
-].join('\n');
+].join("\n");
 
 const KG_SUPERSEDE_PY = [
-  'import sys',
-  'from mempalace.knowledge_graph import KnowledgeGraph',
-  '_, db, subject, predicate, old_obj, new_obj, at = sys.argv',
-  'kg = KnowledgeGraph(db_path=db)',
-  'print(kg.supersede(subject, predicate, old_obj, new_obj, at=at or None))',
-].join('\n');
+  "import sys",
+  "from mempalace.knowledge_graph import KnowledgeGraph",
+  "_, db, subject, predicate, old_obj, new_obj, at = sys.argv",
+  "kg = KnowledgeGraph(db_path=db)",
+  "print(kg.supersede(subject, predicate, old_obj, new_obj, at=at or None))",
+].join("\n");
 
 // Circuit breaker: the worker writes this only when a rebuild-from-sqlite fails
 // (sqlite itself likely corrupt, so retrying can't help). Its presence halts all
 // sweeping until a human fixes the palace and deletes it.
-const PALACE_ERROR_LOG = join(PALACE_DIR, 'repair-error.log');
+const PALACE_ERROR_LOG = join(PALACE_DIR, "repair-error.log");
 
-const ENTITIES_OPEN = '<mempalace-kg-entities>';
-const ENTITIES_CLOSE = '</mempalace-kg-entities>';
+const ENTITIES_OPEN = "<mempalace-kg-entities>";
+const ENTITIES_CLOSE = "</mempalace-kg-entities>";
 
 // Standing behaviour guide. Mirrors the MemPalace "Memory Protocol" that
 // mempalace_status returns and that the Claude Code plugin injects natively.
@@ -143,195 +156,225 @@ const ENTITIES_CLOSE = '</mempalace-kg-entities>';
 // subject+predicate+object), so the prompt encourages frequent, low-friction
 // writes rather than treating KG upkeep as a rare end-of-session chore.
 const MEMORY_PROTOCOL = [
-  '## MemPalace Memory Protocol',
-  'You have a persistent memory palace, reached through the `mempalace_*` MCP tools',
-  '(these may be always available or lazy-loaded — discover them if not already in context).',
-  'When starting relevant work, `mempalace_status` gives the palace overview.',
-  '',
-  '### Querying the knowledge graph',
+  "## MemPalace Memory Protocol",
+  "You have a persistent memory palace, reached through the `mempalace_*` MCP tools",
+  "(these may be always available or lazy-loaded — discover them if not already in context).",
+  "When starting relevant work, `mempalace_status` gives the palace overview.",
+  "",
+  "### Querying the knowledge graph",
   `The entities the graph currently knows about are injected fresh each turn in a \`${ENTITIES_OPEN}\` block.`,
-  'Use it as a routing signal: if the user asks about a person, project, decision, or past event and',
-  'a matching (or related) entity is listed, `mempalace_kg_query` it BEFORE answering — never guess.',
-  'For prose/detail the graph does not hold, `mempalace_search` the verbatim drawers.',
-  '',
-  '### Writing to the knowledge graph — use the `kg_*` tools, NOT the MCP ones',
-  'For all KG WRITES use the plugin-provided tools **`kg_add`**, **`kg_invalidate`**, and **`kg_supersede`**.',
-  'Do NOT use the built-in MCP `mempalace_kg_add` / `mempalace_kg_invalidate` / `mempalace_kg_supersede`:',
+  "Use it as a routing signal: if the user asks about a person, project, decision, or past event and",
+  "a matching (or related) entity is listed, `mempalace_kg_query` it BEFORE answering — never guess.",
+  "For prose/detail the graph does not hold, `mempalace_search` the verbatim drawers.",
+  "",
+  "### Writing to the knowledge graph — use the `kg_*` tools, NOT the MCP ones",
+  "For all KG WRITES use the plugin-provided tools **`kg_add`**, **`kg_invalidate`**, and **`kg_supersede`**.",
+  "Do NOT use the built-in MCP `mempalace_kg_add` / `mempalace_kg_invalidate` / `mempalace_kg_supersede`:",
   'the MCP server refuses those whenever another session holds its writer lease ("Peer MCP writer active"),',
-  'even though KG writes are safe (the graph is a separate sqlite DB, not the locked Chroma store — see',
-  'MemPalace/mempalace#2297). The `kg_*` tools write directly and always work, with identical dedup and',
-  'temporal semantics. (Reads still go through `mempalace_kg_query` / `mempalace_search`.)',
-  '',
-  '### Keep the knowledge graph current (IMPORTANT)',
-  'The graph is the source of truth for durable facts. Keeping it accurate is a standing,',
-  'ongoing responsibility — record facts as they emerge, do not wait until the end of the session.',
-  '- When a durable fact is established or learned (a relationship, ownership, config, version,',
-  '  decision, setup detail, preference), add it immediately with `kg_add`.',
-  '- Prefer attaching facts to entities ALREADY in the injected list — reusing an existing entity',
-  '  keeps the graph connected and adds no stale noise (`kg_add` dedups on subject+predicate+object,',
-  '  so re-adding a fact that already exists is a harmless no-op). Write early and often.',
-  '- When a fact stops being true, call `kg_invalidate` on it; when a single-valued fact CHANGES to a',
-  '  new value (model, version, path…), use `kg_supersede` to swap old→new at one atomic boundary.',
-  '- Record only durable, factual relationships — not transient chatter or in-progress steps.',
-].join('\n');
+  "even though KG writes are safe (the graph is a separate sqlite DB, not the locked Chroma store — see",
+  "MemPalace/mempalace#2297). The `kg_*` tools write directly and always work, with identical dedup and",
+  "temporal semantics. (Reads still go through `mempalace_kg_query` / `mempalace_search`.)",
+  "",
+  "### Keep the knowledge graph current (IMPORTANT)",
+  "The graph is the source of truth for durable facts. Keeping it accurate is a standing,",
+  "ongoing responsibility — record facts as they emerge, do not wait until the end of the session.",
+  "- When a durable fact is established or learned (a relationship, ownership, config, version,",
+  "  decision, setup detail, preference), add it immediately with `kg_add`.",
+  "- Prefer attaching facts to entities ALREADY in the injected list — reusing an existing entity",
+  "  keeps the graph connected and adds no stale noise (`kg_add` dedups on subject+predicate+object,",
+  "  so re-adding a fact that already exists is a harmless no-op). Write early and often.",
+  "- When a fact stops being true, call `kg_invalidate` on it; when a single-valued fact CHANGES to a",
+  "  new value (model, version, path…), use `kg_supersede` to swap old→new at one atomic boundary.",
+  "- Record only durable, factual relationships — not transient chatter or in-progress steps.",
+].join("\n");
 
-export const MemPalace: Plugin = async ({ client, $ }) => {
-  // Render the session's messages as Claude-style JSONL — one record per
-  // user/assistant message, the shape mempalace's sweeper parses:
-  //   {type, uuid, timestamp, sessionId, message:{role, content}}
-  // Synthetic/injected parts are skipped so we never capture our own directives.
-  // Returns the JSONL text (one record per line) or '' if nothing to capture.
-  async function renderJsonl(sessionID: string): Promise<string> {
-    const res = await client.session.messages({ path: { id: sessionID } });
-    const messages = (res as any)?.data ?? [];
-    const lines: string[] = [];
+export const MemPalace = Plugin.define({
+  id: "mempalace",
+  async setup(ctx) {
+    // Render the session's messages as Claude-style JSONL — one record per
+    // user/assistant message, the shape mempalace's sweeper parses:
+    //   {type, uuid, timestamp, sessionId, message:{role, content}}
+    // Synthetic/injected parts are skipped so we never capture our own directives.
+    // Returns the JSONL text (one record per line) or '' if nothing to capture.
+    async function renderJsonl(sessionID: string): Promise<string> {
+      const messages = await ctx.session.context({ sessionID });
+      const lines: string[] = [];
 
-    for (const m of messages) {
-      const info = m?.info;
-      const parts = m?.parts ?? [];
-      if (!info || (info.role !== 'user' && info.role !== 'assistant')) continue;
+      for (const message of messages) {
+        if (message.type !== "user" && message.type !== "assistant") continue;
 
-      const content = parts
-        .filter((p: any) => p?.type === 'text' && !p?.synthetic && typeof p.text === 'string')
-        .map((p: any) => p.text)
-        .join('\n')
-        .trim();
-      if (!content) continue;
+        const content =
+          message.type === "user"
+            ? message.text.trim()
+            : message.content
+                .filter((part) => part.type === "text")
+                .map((part) => part.text)
+                .join("\n")
+                .trim();
+        if (!content) continue;
 
-      const createdMs = info.time?.created ?? Date.now();
-      lines.push(
-        JSON.stringify({
-          type: info.role,
-          uuid: info.id,
-          timestamp: new Date(createdMs).toISOString(),
-          sessionId: info.sessionID ?? sessionID,
-          message: { role: info.role, content },
-        }),
-      );
-    }
-
-    return lines.length ? lines.join('\n') + '\n' : '';
-  }
-
-  // Read the display names of every entity that is the SUBJECT of a currently-valid
-  // fact and render them as a compact `<mempalace-kg-entities>` block. Subjects are
-  // the queryable anchors — objects are mostly leaf values — so listing subjects is
-  // the routing signal the agent needs. Returns '' on any failure or when empty, so
-  // callers simply skip injection. Read-only sqlite3 fork; best-effort.
-  async function renderEntities(): Promise<string> {
-    try {
-      const sql =
-        'SELECT DISTINCT e.name FROM triples t JOIN entities e ON e.id = t.subject ' +
-        'WHERE t.valid_to IS NULL ORDER BY e.name;';
-      const res = await $`sqlite3 -readonly ${KG_DB} ${sql}`.quiet().nothrow();
-      if (res.exitCode !== 0) return '';
-
-      const names = res.stdout
-        .toString()
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (names.length === 0) return '';
-
-      return [
-        ENTITIES_OPEN,
-        'The knowledge graph has current facts about these entities — mempalace_kg_query any that are relevant:',
-        ...names.map((n) => `- ${n}`),
-        ENTITIES_CLOSE,
-      ].join('\n');
-    } catch {
-      return '';
-    }
-  }
-
-  // Fork the detached coalescing sweeper (see mempalace-sweep.sh for the sweep/
-  // self-heal logic). We await only the launcher — setsid detaches and returns in
-  // ms, so the spawn is guaranteed before the handler returns while the sweep
-  // outlives the session. Paths pass via .env() so nothing untrusted is
-  // concatenated into a shell string.
-  async function launchDetachedSweep() {
-    // touch the dirty marker BEFORE the sweeper contends for the lock: a launch that
-    // loses the lock still obligates the running sweeper to one more pass, so its
-    // already-written JSONL is never dropped.
-    await $`sh -c ${`touch "$MP_DIRTY"; setsid -f sh "$MP_SCRIPT" </dev/null >>"$MP_LOG" 2>&1`}`
-      .env({
-        ...process.env,
-        MP_SCRIPT: SWEEP_SCRIPT,
-        MP_SESSIONS: SESSIONS_DIR,
-        MP_LOCK: SWEEP_LOCK,
-        MP_DIRTY: SWEEP_DIRTY,
-        MP_LOG: SWEEP_LOG,
-        MP_CHROMA: PALACE_CHROMA_DB,
-        MP_PALACE: PALACE_DIR,
-        MP_ERROR_LOG: PALACE_ERROR_LOG,
-      })
-      .nothrow();
-  }
-
-  // Render + write the session JSONL, then poke the sweeper. JSONL is written
-  // FIRST so a launch that loses the flock still leaves durable work for the next
-  // sweeper. If the palace is halted (PALACE_ERROR_LOG present from a failed
-  // rebuild) we still write the JSONL but skip the sweep, to avoid writing into a
-  // likely-corrupt DB; the user is told via the messages.transform hook.
-  // Best-effort throughout — never disrupt the session.
-  async function capture(sessionID: string) {
-    if (!sessionID) return;
-    try {
-      await mkdir(SESSIONS_DIR, { recursive: true });
-      const jsonl = await renderJsonl(sessionID);
-      if (!jsonl) return;
-      const jsonlPath = join(SESSIONS_DIR, `${sessionID}.jsonl`);
-      await writeFile(jsonlPath, jsonl, 'utf8');
-
-      const halted = await readFile(PALACE_ERROR_LOG, 'utf8').catch(() => undefined);
-      if (halted) return; // durable JSONL written; skip sweep into a bad DB
-
-      await launchDetachedSweep();
-    } catch {
-      // best-effort
-    }
-  }
-
-  // Lazy TTL sweep: delete <id>.jsonl files older than TTL_DAYS, never the active
-  // session. Runs on idle; best-effort.
-  async function pruneOldSessions(activeSessionID: string) {
-    if (TTL_DAYS <= 0) return;
-    try {
-      const cutoff = Date.now() - TTL_DAYS * 24 * 60 * 60 * 1000;
-      for (const name of await readdir(SESSIONS_DIR)) {
-        if (!name.endsWith('.jsonl')) continue;
-        if (name === `${activeSessionID}.jsonl`) continue;
-        const full = join(SESSIONS_DIR, name);
-        try {
-          const st = await stat(full);
-          if (st.mtimeMs < cutoff) await unlink(full);
-        } catch {
-          // ignore per-file errors
-        }
+        lines.push(
+          JSON.stringify({
+            type: message.type,
+            uuid: message.id,
+            timestamp: new Date(message.time.created).toISOString(),
+            sessionId: sessionID,
+            message: { role: message.type, content },
+          }),
+        );
       }
-    } catch {
-      // dir may not exist yet; ignore
-    }
-  }
 
-  // Drive one of the KG-writer scripts above. Values pass as argv (Bun's $
-  // quotes each interpolated array element as a separate argument), so nothing
-  // untrusted is concatenated into the program or a shell string. KG_DB is
-  // always argv[1]. Best-effort surface: returns a human string either way.
-  async function runKgWriter(script: string, args: string[]): Promise<string> {
-    const res = await $`${MEMPALACE_PY} -c ${script} ${KG_DB} ${args}`.quiet().nothrow();
-    if (res.exitCode !== 0) {
-      const err = res.stderr.toString().trim() || `exit code ${res.exitCode}`;
-      return `KG write FAILED: ${err}`;
+      return lines.length ? lines.join("\n") + "\n" : "";
     }
-    return res.stdout.toString().trim();
-  }
 
-  return {
-    // (A) Memory Protocol — always injected (free, non-blocking).
-    'experimental.chat.system.transform': async (_input, output) => {
-      output.system.push(MEMORY_PROTOCOL);
-    },
+    // Read the display names of every entity that is the SUBJECT of a currently-valid
+    // fact and render them as a compact `<mempalace-kg-entities>` block. Subjects are
+    // the queryable anchors — objects are mostly leaf values — so listing subjects is
+    // the routing signal the agent needs. Returns '' on any failure or when empty, so
+    // callers simply skip injection. Read-only sqlite3 fork; best-effort.
+    async function renderEntities(): Promise<string> {
+      try {
+        const sql =
+          "SELECT DISTINCT e.name FROM triples t JOIN entities e ON e.id = t.subject " +
+          "WHERE t.valid_to IS NULL ORDER BY e.name;";
+        const res = await Bun.$`sqlite3 -readonly ${KG_DB} ${sql}`
+          .quiet()
+          .nothrow();
+        if (res.exitCode !== 0) return "";
+
+        const names = res.stdout
+          .toString()
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (names.length === 0) return "";
+
+        return [
+          ENTITIES_OPEN,
+          "The knowledge graph has current facts about these entities — mempalace_kg_query any that are relevant:",
+          ...names.map((n) => `- ${n}`),
+          ENTITIES_CLOSE,
+        ].join("\n");
+      } catch {
+        return "";
+      }
+    }
+
+    // Fork the detached coalescing sweeper (see mempalace-sweep.sh for the sweep/
+    // self-heal logic). We await only the launcher — setsid detaches and returns in
+    // ms, so the spawn is guaranteed before the handler returns while the sweep
+    // outlives the session. Paths pass via .env() so nothing untrusted is
+    // concatenated into a shell string.
+    async function launchDetachedSweep() {
+      // touch the dirty marker BEFORE the sweeper contends for the lock: a launch that
+      // loses the lock still obligates the running sweeper to one more pass, so its
+      // already-written JSONL is never dropped.
+      await Bun.$`sh -c ${`touch "$MP_DIRTY"; setsid -f sh "$MP_SCRIPT" </dev/null >>"$MP_LOG" 2>&1`}`
+        .env({
+          ...process.env,
+          MP_SCRIPT: SWEEP_SCRIPT,
+          MP_SESSIONS: SESSIONS_DIR,
+          MP_LOCK: SWEEP_LOCK,
+          MP_DIRTY: SWEEP_DIRTY,
+          MP_LOG: SWEEP_LOG,
+          MP_CHROMA: PALACE_CHROMA_DB,
+          MP_PALACE: PALACE_DIR,
+          MP_ERROR_LOG: PALACE_ERROR_LOG,
+        })
+        .nothrow();
+    }
+
+    // Render + write the session JSONL, then poke the sweeper. JSONL is written
+    // FIRST so a launch that loses the flock still leaves durable work for the next
+    // sweeper. If the palace is halted (PALACE_ERROR_LOG present from a failed
+    // rebuild) we still write the JSONL but skip the sweep, to avoid writing into a
+    // likely-corrupt DB; the user is told through the context hook.
+    // Best-effort throughout — never disrupt the session.
+    async function capture(sessionID: string) {
+      if (!sessionID) return;
+      try {
+        await mkdir(SESSIONS_DIR, { recursive: true });
+        const jsonl = await renderJsonl(sessionID);
+        if (!jsonl) return;
+        const jsonlPath = join(SESSIONS_DIR, `${sessionID}.jsonl`);
+        await writeFile(jsonlPath, jsonl, "utf8");
+
+        const halted = await readFile(PALACE_ERROR_LOG, "utf8").catch(() => {});
+        if (halted) return; // durable JSONL written; skip sweep into a bad DB
+
+        await launchDetachedSweep();
+      } catch {
+        // best-effort
+      }
+    }
+
+    // Lazy TTL sweep: delete <id>.jsonl files older than TTL_DAYS, never the active
+    // session. Runs on idle; best-effort.
+    async function pruneOldSessions(activeSessionID: string) {
+      if (TTL_DAYS <= 0) return;
+      try {
+        const cutoff = Date.now() - TTL_DAYS * 24 * 60 * 60 * 1000;
+        for (const name of await readdir(SESSIONS_DIR)) {
+          if (!name.endsWith(".jsonl")) continue;
+          if (name === `${activeSessionID}.jsonl`) continue;
+          const full = join(SESSIONS_DIR, name);
+          try {
+            const st = await stat(full);
+            if (st.mtimeMs < cutoff) await unlink(full);
+          } catch {
+            // ignore per-file errors
+          }
+        }
+      } catch {
+        // dir may not exist yet; ignore
+      }
+    }
+
+    // Drive one of the KG-writer scripts above. Values pass as argv (Bun's $
+    // quotes each interpolated array element as a separate argument), so nothing
+    // untrusted is concatenated into the program or a shell string. KG_DB is
+    // always argv[1]. Best-effort surface: returns a human string either way.
+    async function runKgWriter(
+      script: string,
+      args: string[],
+    ): Promise<string> {
+      const res = await Bun.$`${MEMPALACE_PY} -c ${script} ${KG_DB} ${args}`
+        .quiet()
+        .nothrow();
+      if (res.exitCode !== 0) {
+        const err = res.stderr.toString().trim() || `exit code ${res.exitCode}`;
+        return `KG write FAILED: ${err}`;
+      }
+      return res.stdout.toString().trim();
+    }
+
+    // (A+B) Memory Protocol and live KG routing signal. The context hook mutates
+    // only the primary request, so neither directive is persisted in the session.
+    const contextHook = await ctx.session.hook("context", async (event) => {
+      event.system.push({ type: "text", text: MEMORY_PROTOCOL });
+
+      try {
+        // Surface a halted palace here — this is the request's user-facing channel.
+        const halted = await readFile(PALACE_ERROR_LOG, "utf8").catch(
+          () => undefined,
+        );
+        const block = isDisabled(process.env.MEMPALACE_INJECT_ENTITIES)
+          ? ""
+          : await renderEntities();
+        if (!block && !halted) return;
+
+        const text = halted
+          ? `<mempalace-alert>\nMemPalace indexing is HALTED: a rebuild-from-sqlite failed, so the palace ` +
+            `sqlite is likely corrupt and sweeping is suspended. Sessions are still captured to disk and ` +
+            `will index once resolved. Tell the user: manual intervention required — inspect ` +
+            `${PALACE_ERROR_LOG}, repair/restore the palace sqlite, then delete that file to resume.\n</mempalace-alert>` +
+            (block ? `\n${block}` : "")
+          : block;
+        event.system.push({ type: "text", text });
+      } catch {
+        // best-effort — never disrupt the request
+      }
+    });
 
     // (D) Lock-proof KG writers — WORKAROUND for MemPalace/mempalace#2297
     // (github.com/MemPalace/mempalace/issues/2297): the MCP server gates ALL
@@ -344,121 +387,203 @@ export const MemPalace: Plugin = async ({ client, $ }) => {
     // injection use — so they succeed regardless of the lease and stay
     // schema-identical. Prefer these over the MCP mempalace_kg_* tools for
     // writes; drop them once #2297 is fixed upstream.
-    tool: {
-      kg_add: tool({
+    const toolRegistration = await ctx.tool.transform((tools) => {
+      tools.add({
+        name: "kg_add",
         description:
-          'Add a durable fact (subject → predicate → object) to the MemPalace knowledge graph. ' +
-          'Lock-proof: writes directly to the KG sqlite via mempalace, so it works even when the ' +
+          "Add a durable fact (subject → predicate → object) to the MemPalace knowledge graph. " +
+          "Lock-proof: writes directly to the KG sqlite via mempalace, so it works even when the " +
           'built-in mempalace MCP kg_add is unavailable or refuses with "Peer MCP writer active". ' +
-          'Use THIS instead of the MCP mempalace_kg_add. Dedups on subject+predicate+object.',
-        args: {
-          subject: z.string().describe("Entity the fact is about, e.g. 'aaj-reviewer'"),
-          predicate: z.string().describe("Relationship/verb, e.g. 'documented_by', 'uses_backend'"),
-          object: z.string().describe('The value/target of the relationship'),
-          valid_from: z.string().optional().describe('Start date YYYY-MM-DD or UTC datetime (optional)'),
-          valid_to: z.string().optional().describe('End date/datetime for a historical fact (optional)'),
+          "Use THIS instead of the MCP mempalace_kg_add. Dedups on subject+predicate+object.",
+        input: {
+          type: "object",
+          properties: {
+            subject: {
+              type: "string",
+              description:
+                "Entity the fact is about, for example 'aaj-reviewer'",
+            },
+            predicate: {
+              type: "string",
+              description:
+                "Relationship/verb, for example 'documented_by', 'uses_backend'",
+            },
+            object: {
+              type: "string",
+              description: "The value/target of the relationship",
+            },
+            valid_from: {
+              type: "string",
+              description: "Start date YYYY-MM-DD or UTC datetime (optional)",
+            },
+            valid_to: {
+              type: "string",
+              description: "End date/datetime for a historical fact (optional)",
+            },
+          },
+          required: ["subject", "predicate", "object"],
+          additionalProperties: false,
         },
-        async execute({ subject, predicate, object, valid_from, valid_to }) {
-          const id = await runKgWriter(KG_ADD_PY, [subject, predicate, object, valid_from ?? '', valid_to ?? '']);
-          if (id.startsWith('KG write FAILED')) return id;
-          return `Added: ${subject} → ${predicate} → ${object} (triple ${id})`;
+        async execute(input) {
+          const { subject, predicate, object, valid_from, valid_to } =
+            input as {
+              subject: string;
+              predicate: string;
+              object: string;
+              valid_from?: string;
+              valid_to?: string;
+            };
+          const id = await runKgWriter(KG_ADD_PY, [
+            subject,
+            predicate,
+            object,
+            valid_from ?? "",
+            valid_to ?? "",
+          ]);
+          if (id.startsWith("KG write FAILED")) return { content: id };
+          return {
+            content: `Added: ${subject} → ${predicate} → ${object} (triple ${id})`,
+          };
         },
-      }),
+      });
 
-      kg_invalidate: tool({
+      tools.add({
+        name: "kg_invalidate",
         description:
-          'Mark an existing KG fact (subject → predicate → object) as no longer valid (sets valid_to). ' +
-          'Lock-proof direct-sqlite write; use instead of the MCP mempalace_kg_invalidate. ' +
-          'For a value that CHANGED to a new one, prefer kg_supersede.',
-        args: {
-          subject: z.string(),
-          predicate: z.string(),
-          object: z.string().describe('The current object value of the fact to end'),
-          ended: z.string().optional().describe('End date YYYY-MM-DD or UTC datetime (default: today)'),
+          "Mark an existing KG fact (subject → predicate → object) as no longer valid (sets valid_to). " +
+          "Lock-proof direct-sqlite write; use instead of the MCP mempalace_kg_invalidate. " +
+          "For a value that CHANGED to a new one, prefer kg_supersede.",
+        input: {
+          type: "object",
+          properties: {
+            subject: { type: "string" },
+            predicate: { type: "string" },
+            object: {
+              type: "string",
+              description: "The current object value of the fact to end",
+            },
+            ended: {
+              type: "string",
+              description:
+                "End date YYYY-MM-DD or UTC datetime (default: today)",
+            },
+          },
+          required: ["subject", "predicate", "object"],
+          additionalProperties: false,
         },
-        async execute({ subject, predicate, object, ended }) {
-          const out = await runKgWriter(KG_INVALIDATE_PY, [subject, predicate, object, ended ?? '']);
-          if (out.startsWith('KG write FAILED')) return out;
-          return `Invalidated: ${subject} → ${predicate} → ${object}`;
+        async execute(input) {
+          const { subject, predicate, object, ended } = input as {
+            subject: string;
+            predicate: string;
+            object: string;
+            ended?: string;
+          };
+          const out = await runKgWriter(KG_INVALIDATE_PY, [
+            subject,
+            predicate,
+            object,
+            ended ?? "",
+          ]);
+          if (out.startsWith("KG write FAILED")) return { content: out };
+          return {
+            content: `Invalidated: ${subject} → ${predicate} → ${object}`,
+          };
         },
-      }),
+      });
 
-      kg_supersede: tool({
+      tools.add({
+        name: "kg_supersede",
         description:
-          'Atomically replace a single-valued fact: close (subject → predicate → old_object) and open ' +
-          '(subject → predicate → new_object) at one shared boundary. Use THIS (not invalidate+add) ' +
-          'when a fact CHANGES value (model, version, employer, path…). Lock-proof direct-sqlite write; ' +
-          'use instead of the MCP mempalace_kg_supersede.',
-        args: {
-          subject: z.string(),
-          predicate: z.string(),
-          old_object: z.string().describe('The current (soon-to-be-old) value'),
-          new_object: z.string().describe('The new value'),
-          at: z.string().optional().describe('Boundary date YYYY-MM-DD or UTC datetime (default: now)'),
+          "Atomically replace a single-valued fact: close (subject → predicate → old_object) and open " +
+          "(subject → predicate → new_object) at one shared boundary. Use THIS (not invalidate+add) " +
+          "when a fact CHANGES value (model, version, employer, path…). Lock-proof direct-sqlite write; " +
+          "use instead of the MCP mempalace_kg_supersede.",
+        input: {
+          type: "object",
+          properties: {
+            subject: { type: "string" },
+            predicate: { type: "string" },
+            old_object: {
+              type: "string",
+              description: "The current (soon-to-be-old) value",
+            },
+            new_object: { type: "string", description: "The new value" },
+            at: {
+              type: "string",
+              description:
+                "Boundary date YYYY-MM-DD or UTC datetime (default: now)",
+            },
+          },
+          required: ["subject", "predicate", "old_object", "new_object"],
+          additionalProperties: false,
         },
-        async execute({ subject, predicate, old_object, new_object, at }) {
-          const id = await runKgWriter(KG_SUPERSEDE_PY, [subject, predicate, old_object, new_object, at ?? '']);
-          if (id.startsWith('KG write FAILED')) return id;
-          return `Superseded: ${subject} → ${predicate} → ${old_object} ⇒ ${new_object} (triple ${id})`;
+        async execute(input) {
+          const { subject, predicate, old_object, new_object, at } = input as {
+            subject: string;
+            predicate: string;
+            old_object: string;
+            new_object: string;
+            at?: string;
+          };
+          const id = await runKgWriter(KG_SUPERSEDE_PY, [
+            subject,
+            predicate,
+            old_object,
+            new_object,
+            at ?? "",
+          ]);
+          if (id.startsWith("KG write FAILED")) return { content: id };
+          return {
+            content: `Superseded: ${subject} → ${predicate} → ${old_object} ⇒ ${new_object} (triple ${id})`,
+          };
         },
-      }),
-    },
-
-    // (B) Live KG entity list — fresh routing signal appended to the latest user
-    // message each turn. Never persisted (messages.transform mutates only the
-    // per-request payload); anchored next to current intent. Best-effort.
-    'experimental.chat.messages.transform': async (_input, output) => {
-      try {
-        const messages = output.messages;
-        if (!Array.isArray(messages) || messages.length === 0) return;
-
-        const target = [...messages].reverse().find((m) => m?.info?.role === 'user');
-        if (!target) return;
-
-        // Surface a halted palace here (not in the capture hooks) — this is the only
-        // hook with a user-facing channel.
-        const halted = await readFile(PALACE_ERROR_LOG, 'utf8').catch(() => undefined);
-
-        const block = await renderEntities();
-        if (!block && !halted) return;
-
-        const text = halted
-          ? `<mempalace-alert>\nMemPalace indexing is HALTED: a rebuild-from-sqlite failed, so the palace ` +
-            `sqlite is likely corrupt and sweeping is suspended. Sessions are still captured to disk and ` +
-            `will index once resolved. Tell the user: manual intervention required — inspect ` +
-            `${PALACE_ERROR_LOG}, repair/restore the palace sqlite, then delete that file to resume.\n</mempalace-alert>` +
-            (block ? `\n${block}` : '')
-          : block;
-
-        // Append in place (reassigning output.messages is a no-op in opencode).
-        target.parts.push({
-          id: `mempalace-entities-${Date.now()}`,
-          sessionID: target.info.sessionID,
-          messageID: target.info.id,
-          type: 'text',
-          text,
-          synthetic: true,
-        } as any);
-      } catch {
-        // best-effort — never disrupt the request
-      }
-    },
+      });
+    });
 
     // (C) Deterministic capture on idle (the session's natural end for short-lived
     // and idle-GC'd agents), plus a TTL prune.
-    event: async ({ event }) => {
-      if (event.type !== 'session.idle') return;
-      const sessionID = (event as any).properties?.sessionID as string | undefined;
-      if (!sessionID) return;
-      await capture(sessionID);
-      await pruneOldSessions(sessionID);
-    },
+    const eventController = new AbortController();
+    const events = (async () => {
+      try {
+        for await (const event of ctx.event.subscribe({
+          signal: eventController.signal,
+        })) {
+          if (
+            event.type !== "session.idle" ||
+            isDisabled(process.env.MEMPALACE_HOOKS_AUTO_SAVE)
+          )
+            continue;
+          await capture(event.data.sessionID);
+          await pruneOldSessions(event.data.sessionID);
+        }
+      } catch {
+        // best-effort — never disrupt the session
+      }
+    })();
 
     // (C) Safety-net capture right before context is compressed.
-    'experimental.session.compacting': async (input, _output) => {
-      await capture(input.sessionID);
-    },
-  };
-};
+    const compactionHook = await ctx.session.hook(
+      "compaction",
+      async (event) => {
+        if (!isDisabled(process.env.MEMPALACE_HOOKS_AUTO_SAVE))
+          await capture(event.sessionID);
+      },
+    );
+
+    return async () => {
+      eventController.abort();
+      await Promise.all([
+        contextHook.dispose(),
+        toolRegistration.dispose(),
+        compactionHook.dispose(),
+      ]);
+      await events;
+    };
+  },
+});
+
+function isDisabled(value: string | undefined): boolean {
+  return ["false", "0", "no"].includes(value?.trim().toLowerCase() ?? "");
+}
 
 export default MemPalace;

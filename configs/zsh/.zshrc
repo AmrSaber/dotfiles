@@ -130,9 +130,9 @@ Steps:
 
   local agent_output
   if [[ -n "$OC_FAST_MODEL" ]]; then
-    agent_output="$(opencode run "$prompt" --pure -m "$OC_FAST_MODEL" 2>&1)"
+    agent_output="$(opencode run "$prompt" -m "$OC_FAST_MODEL" 2>&1)"
   else
-    agent_output="$(opencode run "$prompt" --pure 2>&1)"
+    agent_output="$(opencode run "$prompt" 2>&1)"
   fi
 
   local commit_message
@@ -311,12 +311,15 @@ if [[ -d $BREW_PREFIX ]]; then
 
   # Commands init
   eval "$(jumper init zsh)"
+
+  # Special case(s)
+  [ -f "$BREW_PREFIX"/bin/opencode ] && eval "$("$BREW_PREFIX"/bin/opencode --completions zsh)"
 else
   coloured 1 "Brew not found!" >&2
 fi
 
 # Setup auto-completion for commands
-completion_commands=(mise kv gum bin opencode random)
+completion_commands=(mise kv gum bin random)
 for cmd in "${completion_commands[@]}"; do
   exists "$cmd" && eval "$("$cmd" completion zsh)"
 done

@@ -7,7 +7,7 @@
 - Principle of locality: define constants and variables close to where they're used, not globally or at the top of the function.
 
 ## Long-running / Verbose Commands
-Never block the session on a long command. Run it detached, send its output to a log, then poll that log on a fixed interval.
+Never block the session on a **long** command (expected to run for more than 5 minutes). Run it detached, send its output to a log, then poll that log on a fixed interval.
 
 **Start it in the background.** Redirect both streams to `/tmp/<name>.log` and record the PID:
 ```bash
