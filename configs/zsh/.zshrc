@@ -1,20 +1,31 @@
-# PATH updates
-[[ "$PATH" =~ $HOME/go/bin ]] || PATH="$PATH:$HOME/go/bin"                             # Go bin
-[[ "$PATH" =~ $HOME/.cargo/bin ]] || PATH="$PATH:$HOME/.cargo/bin"                     # Cargo bin
-[[ "$PATH" =~ $HOME/.local/bin:$HOME/bin ]] || PATH="$PATH:$HOME/.local/bin:$HOME/bin" # Local bin
-export PATH
+# === PATH updates ===
+# Enable path (the array) dedup
+typeset -U path
+
+path=($path "$HOME"/go/bin)                 # Go bin
+path=($path "$HOME"/.cargo/bin)             # Cargo bin
+path=($path "$HOME"/.local/bin "$HOME"/bin) # Local bin
+
+# === Exports ===
+DEVICE_NAME="$(hostname)"
+export DEVICE_NAME
+
+BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
+export BREW_PREFIX
+
+export EDITOR="nvim"
+export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
+
+export NOTES_DIR="$HOME/notes"
 
 # === Aliases ===
 # Renames
 alias cat="bat --plain"
+alias opencode="$BREW_PREFIX/bin/opencode"
 
 # Short-cuts
 alias dc="docker compose"
 alias ff="fastfetch"
-
-# Neovim
-alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload"
-alias vf='start-renamed nvim nvim $(fzf -m --preview "bat --plain --color=always {}")'
 
 # Bookmarks
 alias jp="jumper"
@@ -28,24 +39,11 @@ alias py-activate="source .venv/bin/activate"
 alias py-deactivate="deactivate"
 
 # Utils
-alias dotenv='export $(cat .evn | xargs)'            # Parse and set .env file
-alias scripts='jq ".scripts" package.json'           # Print "scripts" section from package.json
-alias jr='cd $(git rev-parse --show-toplevel)'       # Jump to repo root
-command -v open &>/dev/null || alias open='xdg-open' # Open file with default app
-
-# === Exports ===
-DEVICE_NAME="$(hostname)"
-export DEVICE_NAME
-
-BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "/home/linuxbrew/.linuxbrew")"
-export BREW_PREFIX
-
-export OPENCODE_ENABLE_EXA=1
-
-export EDITOR="nvim"
-export SUDO_EDITOR="$BREW_PREFIX/bin/nvim"
-
-export NOTES_DIR="$HOME/notes"
+alias dotenv='export $(cat .evn | xargs)'                                   # Parse and set .env file
+alias scripts='jq ".scripts" package.json'                                  # Print "scripts" section from package.json
+alias jr='cd $(git rev-parse --show-toplevel)'                              # Jump to repo root
+command -v open &>/dev/null || alias open='xdg-open'                        # Open file with default app
+alias vz="nvim ~/.zshrc ~/.zsh_local ~/.config/starship.toml && omz reload" # Edit shell config
 
 # === Functions ===
 # Start zellij session if not already inside one
@@ -84,17 +82,6 @@ silent() { "$@" &>/dev/null; }
 exists() {
   command -v "$1" &>/dev/null
   return "$?"
-}
-
-start-renamed() {
-  # In Zsh trap EXIT works with functions returns; similar to trap RETURN in bash
-  trap 'zellij ac undo-rename-pane' EXIT
-
-  local title="$1"
-  shift
-
-  zellij ac rename-pane "$title"
-  "$@"
 }
 
 # Ask opencode for a commit message, then use it to commit
@@ -233,7 +220,6 @@ coloured() {
   echo "$text"
   tput sgr0
 }
-alias clrd='coloured'
 
 notes() {
   mkdir -p "$NOTES_DIR"
@@ -311,9 +297,6 @@ if [[ -d $BREW_PREFIX ]]; then
 
   # Commands init
   eval "$(jumper init zsh)"
-
-  # Special case(s)
-  [ -f "$BREW_PREFIX"/bin/opencode ] && eval "$("$BREW_PREFIX"/bin/opencode --completions zsh)"
 else
   coloured 1 "Brew not found!" >&2
 fi
@@ -326,6 +309,7 @@ done
 
 # Special case
 exists just && eval "$(just --completions zsh)"
+[[ -f "$BREW_PREFIX"/bin/opencode ]] && eval "$(opencode --completions zsh)"
 
 # Load local config if present
 [[ -f ~/.zsh_local ]] && source "$HOME/.zsh_local"
