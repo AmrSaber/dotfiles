@@ -7,29 +7,9 @@
 - Principle of locality: define constants and variables close to where they're used, not globally or at the top of the function.
 
 ## Long-running / Verbose Commands
-Never block the session on a **long** command (expected to run for more than 5 minutes). Run it detached, send its output to a log, then poll that log on a fixed interval.
+Never block the session on a **long** command (expected to run for more than 1 minute). Run the commands through OpenCode's Background command, which allows you to work on other things and receive user messages while the command is running. You will also get notified automatically when the command is done, so no polling is even needed.
 
-**Start it in the background.** Redirect both streams to `/tmp/<name>.log` and record the PID:
-```bash
-<command> > /tmp/<name>.log 2>&1 &
-echo "PID: $!"
-```
-
-**Periodically poll for the status**, polling interval can vary depending on the expected runtime of the command, it can be any of (1, 2, 5, or 10 minutes) and it can also be overridden by the user if they want more periodic updates or if they only care about the end result. Sleep and inspect in a single call, so the turn never sits idle:
-```bash
-sleep 120 && <check-command>
-```
-Where `<check-command>` could be:
-- Checking the status of the process via `ps`
-- Checking the log file with `tail` or `cat` (if limited output is expected)
-- Any other indication of the command's processing and progress. No hard rule here, do whatever is suitable to get the command's status
-
-A few notes:
-- **Grep for signals; don't dump the log.** Pull only the lines that show progress, success, or failure. Tailing thousands of lines burns context for nothing.
-- **Keep polling until the job finishes.** Never go idle while a background job runs. With nothing else to do, keep sleeping and re-checking. Use the gaps for other useful work when there is any.
-- **Expect buffered output.** Some tools (Jest, for one) print nothing until every suite ends, so an empty log does not mean the job is stuck. Confirm progress from external state instead — the process table, AWS resources, ...
-- **Report deltas, not heartbeats.** Speak up when the state changes; stay quiet when it hasn't.
-- **Clean up afterwards.** Kill orphaned child processes when aborting a run, and delete the log when done.
+When in doubt whether the command will take long or short time: default to background commands.
 
 ## Writing Guideline
 Use these guidelines in all your writings (files, docs, comments, commit messages, PR descriptions, ...), they apply to any persistent text being written in any context.
