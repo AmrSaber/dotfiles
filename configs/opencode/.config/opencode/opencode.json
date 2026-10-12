@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/v2/config.json",
+  "default_agent": "assist",
+  "permissions": [
+    { "action": "*", "resource": "*", "effect": "allow" },
+    { "action": "question", "resource": "*", "effect": "deny" }
+  ],
+  "plugins": ["@dietrichgebert/ponytail"],
+  "mcp": {
+    "servers": {
+      "mcp-gateway": {
+        "type": "local",
+        "command": ["mcp-gateway", "agent", "mcp"],
+        "codemode": false
+      },
+      "breadcrumbs": {
+        "type": "local",
+        "command": ["breadcrumbs", "agent", "mcp"],
+        "codemode": false
+      },
+      "mempalace": {
+        "type": "local",
+        "command": ["mempalace-mcp"],
+        "codemode": false
+      }
+    }
+  }
+}
