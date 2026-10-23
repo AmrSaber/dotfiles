@@ -29,7 +29,8 @@ restore-extensions:
 # Stows all configs
 [working-directory: './configs']
 stow:
-  #!/usr/bin/env bash
+  #!/usr/bin/env zsh
+  source ~/.zshrc
 
   for app in *; do
     if [[ "$app" == "opencode" ]]; then
@@ -39,21 +40,12 @@ stow:
     fi
 
     if (($? == 0)); then
-      gum style --foreground 4 "Stowed '$app'"
+      coloured 4 "Stowed '$app'"
     else
-      gum style --foreground 1 "Could not stow '$app'"
+      coloured 1 "Could not stow '$app'"
     fi
 
   done
-
-# List existing configs
-list-configs:
-  @ls ./configs
-alias ls := list-configs
-
-# Pull origin main
-pull:
-  git pull origin main
 
 # Add all, commit, pull, and push
 commit:
