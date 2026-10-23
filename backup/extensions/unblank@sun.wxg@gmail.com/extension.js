@@ -3,7 +3,6 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import Gdk from 'gi://Gdk';
 import St from 'gi://St';
 import UPower from 'gi://UPowerGlib';
 
@@ -13,6 +12,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as Overview from 'resource:///org/gnome/shell/ui/overview.js';
 import { loadInterfaceXML } from 'resource:///org/gnome/shell/misc/fileUtils.js';
+
+import {OledShift} from './oledShift.js';
 
 
 const MANUAL_FADE_TIME = 0.3;
@@ -40,6 +41,8 @@ const DisplayConfigProxy = Gio.DBusProxy.makeProxyWrapper(DisplayConfigIface);
 class Unblank {
     constructor(settings) {
         this.gsettings = settings;
+        // OLED protection: moves the lock screen content while the screen stays on
+        this.oledShift = new OledShift(settings);
         this.proxy = new DisplayConfigProxy(Gio.DBus.session, BUS_NAME, OBJECT_PATH, () => {});
 
         this.setActiveOrigin = Main.screenShield._setActive;
@@ -53,6 +56,7 @@ class Unblank {
         this.inLock = false;
         this._activeOnce = false;
         this.enabled = false;
+        this._powerChangedId = 0;
 
         //this.powerProxy = new PowerManagerProxy(Gio.DBus.system, UPOWER_BUS_NAME, UPOWER_OBJECT_PATH,
         this.powerProxy = new UPowerProxy(Gio.DBus.system,
@@ -63,8 +67,10 @@ class Unblank {
                                                         log(error.message);
                                                         return;
                                                     }
-                                                    this.powerProxy.connect('g-properties-changed',
-                                                                            this._onPowerChanged.bind(this));
+                                                    if (!this.enabled)
+                                                        return;
+                                                    this._powerChangedId = this.powerProxy.connect('g-properties-changed',
+                                                                                                    this._onPowerChanged.bind(this));
                                                     this._onPowerChanged(); });
     }
 
@@ -81,6 +87,11 @@ class Unblank {
         Main.screenShield._activateFade = this.activateFadeOrigin;
         Main.screenShield._resetLockScreen = this.resetLockScreenOrigin;
         Main.screenShield._onUserBecameActive = this.onUserBecameActiveOrigin;
+        if (this._powerChangedId != 0) {
+            this.powerProxy.disconnect(this._powerChangedId);
+            this._powerChangedId = 0;
+        }
+        this.oledShift.stop();
         this.enabled = false;
     }
 
@@ -94,12 +105,15 @@ class Unblank {
 
         if (Main.screenShield._isActive) {
             if (this.isOnBattery) {
+                this.oledShift.stop();
                 Main.screenShield.emit('active-changed');
                 Main.screenShield.activate(false);
                 this._activeOnce = true;
                 //_turnOffMonitor();
-            } else
+            } else {
                 _turnOnMonitor();
+                this.oledShift.start();
+            }
         }
     }
 }
@@ -112,13 +126,18 @@ function _setActive(active) {
     if (prevIsActive != this._isActive) {
         if (!unblank.isUnblank() || unblank._activeOnce) {
             this.emit('active-changed');
-            unblank._activeOnce = false;
+            // Remember an announced lock, so the unlock is announced too
+            // even if the power source changed in between (issue #37)
+            unblank._activeOnce = active;
         }
     }
     if (active) {
         _activateTimer();
+        if (unblank.isUnblank())
+            unblank.oledShift.start();
     } else {
         _deactiveTimer();
+        unblank.oledShift.stop();
     }
 
     if (this._loginSession)
@@ -216,6 +235,7 @@ function _activateTimer() {
     let timer = unblank.gsettings.get_int('time');
     if (timer != 0) {
         unblank._turnOffMonitorId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, timer, () => {
+            unblank.oledShift.stop();
             _changeToBlank();
             //_turnOffMonitor();
             unblank._turnOffMonitorId = 0;

@@ -1,74 +1,93 @@
+import Adw from 'gi://Adw';
+import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const SCHEMA_NAME = 'org.gnome.shell.extensions.unblank';
+const SHIFT_INTERVAL_OPTIONS = [
+    [30, '30 seconds'],
+    [60, '1 minute'],
+    [120, '2 minutes'],
+    [300, '5 minutes'],
+];
 
-function buildPrefsWidget(gsettings) {
-    let widget = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10,
-        margin_bottom: 10,
-        margin_start: 10,
-        margin_end: 10,
-    });
-
-    let vbox = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10
-    });
-    vbox.set_size_request(550, 350);
-
-    let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5 });
-    let power_setting_label = new Gtk.Label({ label: "Only unblank when on AC",
-        hexpand: true,
-        xalign: 0 });
-    let power_setting_switch = new Gtk.Switch({ active: gsettings.get_boolean('power') });
-
-    power_setting_switch.connect('notify::active',
-                   function (button) { gsettings.set_boolean('power', button.active); });
-
-    hbox.append(power_setting_label);
-    hbox.append(power_setting_switch);
-    vbox.append(hbox);
-
-    hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5 });
-    let timebox_label = new Gtk.Label({ label: "Timeout to blank after locking the screen",
-        hexpand: true,
-        xalign: 0 });
-    let timebox_comboBox= new Gtk.ComboBoxText();
-    timebox_comboBox.connect('changed',
-                             (box) => { gsettings.set_int('time', Number(box.get_active_id())) });
-
-    timebox_comboBox.append("0",    "Never");
-    timebox_comboBox.append("300",  "5 minutes");
-    timebox_comboBox.append("600",  "10 minutes");
-    timebox_comboBox.append("900",  "15 minutes");
-    timebox_comboBox.append("1800", "30 minutes");
-    timebox_comboBox.append("3600", "60 minutes");
-    timebox_comboBox.append("5400", "90 minutes");
-    timebox_comboBox.append("7200", "120 minutes");
-
-    timebox_comboBox.set_active_id(gsettings.get_int('time').toString());
-
-    hbox.append(timebox_label);
-    hbox.append(timebox_comboBox);
-    vbox.append(hbox);
-
-    widget.append(vbox);
-
-    return widget;
-}
-
-function addBoldTextToBox(text, box) {
-    let txt = new Gtk.Label({xalign: 0});
-    txt.set_markup('<b>' + text + '</b>');
-    txt.set_line_wrap(true);
-    box.append(txt);
-}
+const TIME_OPTIONS = [
+    [0, 'Never'],
+    [300, '5 minutes'],
+    [600, '10 minutes'],
+    [900, '15 minutes'],
+    [1800, '30 minutes'],
+    [3600, '60 minutes'],
+    [5400, '90 minutes'],
+    [7200, '120 minutes'],
+];
 
 export default class UnblankPrefs extends ExtensionPreferences {
-    getPreferencesWidget() {
-        return buildPrefsWidget(this.getSettings());
+    fillPreferencesWindow(window) {
+        const settings = this.getSettings();
+
+        const page = new Adw.PreferencesPage();
+        const group = new Adw.PreferencesGroup();
+        page.add(group);
+
+        const powerRow = new Adw.SwitchRow({ title: 'Only unblank when on AC' });
+        settings.bind('power', powerRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(powerRow);
+
+        const timeRow = new Adw.ComboRow({
+            title: 'Timeout to blank after locking the screen',
+            model: Gtk.StringList.new(TIME_OPTIONS.map(([, label]) => label)),
+        });
+        const saved = settings.get_int('time');
+        const index = TIME_OPTIONS.findIndex(([value]) => value === saved);
+        timeRow.selected = index >= 0 ? index : 0;
+        timeRow.connect('notify::selected',
+            () => settings.set_int('time', TIME_OPTIONS[timeRow.selected][0]));
+        group.add(timeRow);
+
+        const oledGroup = new Adw.PreferencesGroup({
+            title: 'OLED protection',
+            description: 'Moves the clock, date and notifications a little at every interval, like the Screen Shift feature of OLED TVs',
+        });
+        page.add(oledGroup);
+
+        const shiftRow = new Adw.SwitchRow({ title: 'Shift lock screen content' });
+        settings.bind('oled-shift', shiftRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        oledGroup.add(shiftRow);
+
+        const radiusRow = new Adw.SpinRow({
+            title: 'Shift distance (pixels)',
+            adjustment: new Gtk.Adjustment({ lower: 1, upper: 60, step_increment: 1, page_increment: 5 }),
+        });
+        settings.bind('oled-shift-radius', radiusRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+        oledGroup.add(radiusRow);
+
+        const intervalRow = new Adw.ComboRow({
+            title: 'Shift interval',
+            model: Gtk.StringList.new(SHIFT_INTERVAL_OPTIONS.map(([, label]) => label)),
+        });
+        const savedInterval = settings.get_int('oled-shift-interval');
+        const intervalIndex = SHIFT_INTERVAL_OPTIONS.findIndex(([value]) => value === savedInterval);
+        intervalRow.selected = intervalIndex >= 0 ? intervalIndex : 1;
+        intervalRow.connect('notify::selected',
+            () => settings.set_int('oled-shift-interval', SHIFT_INTERVAL_OPTIONS[intervalRow.selected][0]));
+        oledGroup.add(intervalRow);
+
+        const opacityRow = new Adw.SpinRow({
+            title: 'Content opacity (%)',
+            subtitle: 'Shows the clock and notifications dimmer; 100 leaves them unchanged',
+            adjustment: new Gtk.Adjustment({ lower: 20, upper: 100, step_increment: 5, page_increment: 10 }),
+        });
+        settings.bind('oled-content-opacity', opacityRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+        oledGroup.add(opacityRow);
+
+        const blackRow = new Adw.SwitchRow({
+            title: 'Black background',
+            subtitle: 'Hides the wallpaper while the clock is shown',
+        });
+        settings.bind('oled-black-background', blackRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        oledGroup.add(blackRow);
+
+        window.add(page);
     }
 }

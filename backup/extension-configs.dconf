@@ -76,10 +76,10 @@ window-picker-icon=true
 workspace-switcher-size=0
 
 [nightthemeswitcher/time]
-location=(52.225888882053255, 0.111503)
+location=(51.588928329705858, -0.24910299999999999)
 nightthemeswitcher-ondemand-keybinding=['']
-sunrise=6.3385134487006667
-sunset=19.586966973107963
+sunrise=7.6457583536112672
+sunset=17.864707780784286
 
 [paperwm]
 last-used-display-server='Wayland'
@@ -133,7 +133,7 @@ move-workspace-left=@as []
 move-workspace-right=@as []
 
 [space-bar/state]
-version=39
+version=40
 
 [switcher]
 activate-after-ms=uint32 0
