@@ -30,7 +30,10 @@ restore-extensions:
 [working-directory: './configs']
 stow:
   #!/usr/bin/env zsh
-  source ~/.zshrc
+
+  # Take into consideration the inital stow when .zshrc is not in ~ yet.
+  [[ -f ~/.zshrc ]] && source ~/.zshrc
+  command -v coloured &>/dev/null || coloured(){ shift; echo "$@" }
 
   for app in *; do
     if [[ "$app" == "opencode" ]]; then
@@ -38,6 +41,7 @@ stow:
     else
       stow -t "$HOME" -R "$app"
     fi
+
 
     if (($? == 0)); then
       coloured 4 "Stowed '$app'"
