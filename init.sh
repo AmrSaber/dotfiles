@@ -41,7 +41,7 @@ brew_packages=(
   tlrc fzf yazi yq                                                   # Quality of life
   fastfetch btop shellcheck                                          # Extras
   ffmpeg sevenzip poppler resvg imagemagick                          # Yazi tool-kit to provide previews
-  go python uv                                                       # Programming languages
+  bun go python uv                                                   # Programming languages
 )
 
 brew_casks=(
@@ -53,7 +53,7 @@ brew install --cask "${brew_casks[@]}"
 
 # More programming languages
 eval "$(mise activate bash)"
-mise use -g bun node@lts
+mise use -g node@lts
 
 # Install bin
 if ! command -v bin &>/dev/null; then
