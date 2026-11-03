@@ -2,6 +2,7 @@
 - Read the project's README and/or contribution guide first, before anything else.
 - Prefer `mise` on projects that use it (`mise.toml` / `mise.local.toml`): its tasks respect project conventions and give the best output, so favour e.g. `mise test` over a manual test command — unless you need options the task doesn't expose.
 - Generally speaking, favour delegating big chunks of work (especially work that has been planned with the user and that does not require additional feedback from the user) to subagents so that the context does not get cluttered; unless asked otherwise by the user.
+- When user gives a task: if it's clear start working on it right away. If it's not clear state what you understood and ask for clarification or confirmation. Don't ask for confirmation for confirmation's sake.
 
 ## Code Style
 - Order code for human readability: entry point / main function first, then helpers in roughly the order they're first called (DFS from the entry point).
