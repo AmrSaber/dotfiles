@@ -7,7 +7,21 @@ type MineResult = {
   content?: string | ReadonlyArray<{ type: string; text?: string }>;
 };
 
-export async function mineDirectories(
+// shortcut: in-process lock only, a second OpenCode process could still race on the config files; replace if that happens.
+let pending: Promise<unknown> = Promise.resolve();
+
+export function mineDirectories(
+  root: string,
+  directories: string[],
+  mine: (source: string) => Promise<MineResult>,
+  beforeWrite: (sources: string[]) => Promise<void>,
+): Promise<string> {
+  const run = pending.then(() => mineExclusively(root, directories, mine, beforeWrite));
+  pending = run.catch(() => undefined);
+  return run;
+}
+
+async function mineExclusively(
   root: string,
   directories: string[],
   mine: (source: string) => Promise<MineResult>,
@@ -27,26 +41,32 @@ export async function mineDirectories(
   for (const source of sources) await preflightConfig(source);
   await beforeWrite([...sources]);
   for (const source of sources) await preflightConfig(source);
-  for (const source of sources) {
-    await validateDirectory(root, source);
-    await writeConfig(source, roomName(relative(root, source)));
-  }
 
-  const completed: string[] = [];
-  for (const source of sources) {
-    const room = roomName(relative(root, source));
-    try {
+  // The configs are generated routing input only; remove them even if writing or mining fails.
+  try {
+    for (const source of sources) {
       await validateDirectory(root, source);
-      const output = nativeOutput(await mine(source));
-      completed.push(`Source: ${source}\nRoom: ${room}\n${output}`);
-    } catch (error) {
-      throw new Error(
-        `Mining failed for ${source} (room ${room}): ${error instanceof Error ? error.message : String(error)}\n\nCompleted sources:\n${completed.join("\n\n") || "None."}`,
-        { cause: error },
-      );
+      await writeConfig(source, roomName(relative(root, source)));
     }
+
+    const completed: string[] = [];
+    for (const source of sources) {
+      const room = roomName(relative(root, source));
+      try {
+        await validateDirectory(root, source);
+        const output = nativeOutput(await mine(source));
+        completed.push(`Source: ${source}\nRoom: ${room}\n${output}`);
+      } catch (error) {
+        throw new Error(
+          `Mining failed for ${source} (room ${room}): ${error instanceof Error ? error.message : String(error)}\n\nCompleted sources:\n${completed.join("\n\n") || "None."}`,
+          { cause: error },
+        );
+      }
+    }
+    return completed.join("\n\n") || "No Markdown directories found.";
+  } finally {
+    await Promise.all(sources.map(removeConfig));
   }
-  return completed.join("\n\n") || "No Markdown directories found.";
 }
 
 async function validateDirectory(root: string, directory: string): Promise<void> {
@@ -137,6 +157,15 @@ async function writeConfig(source: string, room: string): Promise<void> {
     }
   } finally {
     await rm(temporary, { force: true });
+  }
+}
+
+async function removeConfig(source: string): Promise<void> {
+  const path = join(source, "mempalace.yaml");
+  try {
+    if ((await readOwnedConfig(path)) !== undefined) await rm(path);
+  } catch {
+    // Best effort: leave anything not provably plugin-owned, and never mask the mining result.
   }
 }
 
