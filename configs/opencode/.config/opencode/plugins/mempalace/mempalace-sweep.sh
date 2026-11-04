@@ -1,6 +1,6 @@
 #!/bin/sh
 # Detached coalescing sweeper + self-heal, spawned by launchDetachedSweep() in
-# mempalace.ts. Inputs arrive as MP_* env vars so nothing untrusted is ever
+# conversations.ts. Inputs arrive as MP_* env vars so nothing untrusted is ever
 # concatenated into a shell string.
 #   MP_SESSIONS MP_LOCK MP_DIRTY MP_LOG MP_CHROMA MP_PALACE MP_ERROR_LOG
 
