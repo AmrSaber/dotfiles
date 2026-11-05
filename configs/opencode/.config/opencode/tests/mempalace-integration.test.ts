@@ -90,7 +90,7 @@ test("a failed facts registration cleans up memory hooks and capture subscriptio
   expect(fixture.disposals).toBe(2);
 });
 
-test("a failed compaction registration never starts an idle subscription", async () => {
+test("a failed compaction registration never starts a capture subscription", async () => {
   const fixture = context();
   const original = fixture.ctx.session.hook;
   fixture.ctx.session.hook = async (name: string, hook: any) => {
@@ -121,7 +121,13 @@ function context() {
       hook: async (name: string, hook: any) => { hooks.set(name, [...(hooks.get(name) ?? []), hook]); return registration(); },
       context: async () => { fixture.contextReads++; return []; },
     },
-    event: { subscribe: async function* ({ signal }: { signal: AbortSignal }) { fixture.signal = signal; } },
+    event: {
+      subscribe: async function* ({ signal }: { signal: AbortSignal }) {
+        fixture.signal = signal;
+        // A live stream stays open until the plugin unloads.
+        if (!signal.aborted) await new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
+      },
+    },
   };
   return fixture;
 }

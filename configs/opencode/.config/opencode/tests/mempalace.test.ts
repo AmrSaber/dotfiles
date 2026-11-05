@@ -94,14 +94,71 @@ test("compaction writes deterministic full user and assistant JSONL, with timest
   expect(ctx.reads).toEqual(["session-1", "session-1", "session-1"]);
 });
 
-test("idle captures the transcript and ignores unrelated events", async () => {
+test("turn end captures the transcript and ignores unrelated events", async () => {
   const ctx = fakeContext([userMessage()]);
   cleanups.push(await registerConversations(ctx as any));
+  // The server never publishes session.idle for ordinary turns, so capture must use execution events.
+  expect(ctx.subscribedTypes).toEqual(["session.execution.succeeded", "session.execution.interrupted", "session.execution.failed"]);
   await ctx.emit({ type: "session.renamed", data: { sessionID: "session-1" } });
-  expect(ctx.reads).toEqual([]);
   await ctx.emit({ type: "session.idle", data: { sessionID: "session-1" } });
+  expect(ctx.reads).toEqual([]);
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "session-1" } });
   expect(await readFile(sessionFile("session-1"), "utf8")).toContain("Fixture question");
   expect(calls).toHaveLength(1);
+});
+
+test.each([
+  ["interrupted", { reason: "user" }],
+  ["failed", { error: { type: "provider.auth" } }],
+])("a %s turn is captured too", async (outcome, extra) => {
+  const ctx = fakeContext([userMessage()]);
+  cleanups.push(await registerConversations(ctx as any));
+  await ctx.emit({ type: `session.execution.${outcome}`, data: { sessionID: "session-1", ...extra } });
+  expect(await readFile(sessionFile("session-1"), "utf8")).toContain("Fixture question");
+  expect(calls).toHaveLength(1);
+});
+
+test("a stream that ends is resubscribed and the end is logged", async () => {
+  const ctx = fakeContext([userMessage()]);
+  ctx.streamPlan = ["end"];
+  cleanups.push(await registerConversations(ctx as any, { retryDelayMs: 1 }));
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "session-1" } });
+  expect(ctx.subscribeCalls).toBe(2);
+  expect(await readFile(sessionFile("session-1"), "utf8")).toContain("Fixture question");
+  expect(await readFile(captureLog(), "utf8")).toMatch(/\] event stream ended\n$/);
+});
+
+test("a stream that fails is resubscribed and the error is logged", async () => {
+  const ctx = fakeContext([userMessage()]);
+  ctx.streamPlan = [new Error("fixture stream failure"), new Error("second failure")];
+  cleanups.push(await registerConversations(ctx as any, { retryDelayMs: 1 }));
+  await ctx.emit({ type: "session.execution.failed", data: { sessionID: "session-1" } });
+  expect(ctx.subscribeCalls).toBe(3);
+  const log = await readFile(captureLog(), "utf8");
+  expect(log).toContain("event stream failed: Error: fixture stream failure");
+  expect(log).toContain("event stream failed: Error: second failure");
+});
+
+test("unloading stops resubscribing and logs nothing", async () => {
+  const ctx = fakeContext();
+  const conversations = await registerConversations(ctx as any, { retryDelayMs: 1 });
+  await conversations();
+  const calls = ctx.subscribeCalls;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(ctx.subscribeCalls).toBe(calls);
+  await expect(readFile(captureLog())).rejects.toThrow();
+});
+
+test("a retry waits for the delay and unloading cuts the wait short", async () => {
+  const ctx = fakeContext();
+  ctx.streamPlan = ["end"];
+  const conversations = await registerConversations(ctx as any, { retryDelayMs: 60_000 });
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(ctx.subscribeCalls).toBe(1);
+  const started = Date.now();
+  await conversations();
+  expect(Date.now() - started).toBeLessThan(5_000);
+  expect(ctx.subscribeCalls).toBe(1);
 });
 
 test.each([" FALSE ", "0", "No"])("auto-save opt-out %s leaves memory context active", async (disabled) => {
@@ -110,7 +167,7 @@ test.each([" FALSE ", "0", "No"])("auto-save opt-out %s leaves memory context ac
   const ctx = fakeContext([userMessage()]);
   cleanups.push(await registerConversations(ctx as any), await registerMemoryContext(ctx as any));
   await oldSession("old-session", 8);
-  await ctx.emit({ type: "session.idle", data: { sessionID: "session-1" } });
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "session-1" } });
   await ctx.hooks.get("compaction")!({ sessionID: "session-1" });
   expect(ctx.reads).toEqual([]);
   expect(await readFile(sessionFile("old-session"), "utf8")).toBe("fixture");
@@ -130,7 +187,7 @@ test.each([undefined, "invalid"])("TTL %s defaults to seven days and never prune
   await oldSession("expired", 8);
   await oldSession("recent", 6);
   await writeFile(join(home, ".mempalace", "opencode-sessions", "sweep.log"), "keep log");
-  await ctx.emit({ type: "session.idle", data: { sessionID: "active" } });
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "active" } });
   await expect(readFile(sessionFile("expired"))).rejects.toThrow();
   expect(await readFile(sessionFile("active"), "utf8")).toBe("fixture");
   expect(await readFile(sessionFile("recent"), "utf8")).toBe("fixture");
@@ -144,7 +201,7 @@ test("zero TTL keeps expired and active transcripts", async () => {
   cleanups.push(await registerConversations(ctx as any));
   await oldSession("active", 20);
   await oldSession("expired", 20);
-  await ctx.emit({ type: "session.idle", data: { sessionID: "active" } });
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "active" } });
   expect(await readFile(sessionFile("active"), "utf8")).toBe("fixture");
   expect(await readFile(sessionFile("expired"), "utf8")).toBe("fixture");
 });
@@ -157,7 +214,7 @@ test("a halted palace still receives full JSONL without launching the sweeper", 
   await ctx.hooks.get("compaction")!({ sessionID: "session-1" });
   expect(await readFile(sessionFile("session-1"), "utf8")).toContain("Fixture question");
   messages.push({ ...userMessage(), id: "user-2", text: "Another turn" });
-  await ctx.emit({ type: "session.idle", data: { sessionID: "session-1" } });
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "session-1" } });
   expect((await readFile(sessionFile("session-1"), "utf8")).trim().split("\n")).toHaveLength(2);
   expect(calls).toHaveLength(0);
 });
@@ -274,13 +331,13 @@ test("capture and memory failures remain best-effort and do not remove durable J
   expect(await readFile(sessionFile("session-1"), "utf8")).toContain("Fixture question");
   expect(await contextText(ctx)).toContain("MemPalace Memory Protocol");
   ctx.failContext = true;
-  await ctx.emit({ type: "session.idle", data: { sessionID: "session-2" } });
+  await ctx.emit({ type: "session.execution.succeeded", data: { sessionID: "session-2" } });
   await expect(readFile(sessionFile("session-2"))).rejects.toThrow();
   await ctx.hooks.get("compaction")!({ sessionID: "" });
   expect(ctx.reads).toEqual(["session-1", "session-2"]);
 });
 
-test("cleanup disposes each helper's hooks and stops the idle subscription", async () => {
+test("cleanup disposes each helper's hooks and stops the capture subscription", async () => {
   const ctx = fakeContext();
   const conversations = await registerConversations(ctx as any);
   const memoryContext = await registerMemoryContext(ctx as any);
@@ -304,6 +361,10 @@ function fakeContext(messages: any[] = []) {
     reads: [] as string[],
     disposals: [] as string[],
     signal: undefined as AbortSignal | undefined,
+    subscribedTypes: undefined as string[] | undefined,
+    subscribeCalls: 0,
+    // Consumed one per subscription: "end" closes the stream at once, an Error makes it fail.
+    streamPlan: [] as Array<"end" | Error>,
     subscriptionEnded: false,
     failContext: false,
     session: {
@@ -318,8 +379,13 @@ function fakeContext(messages: any[] = []) {
       },
     },
     event: {
-      subscribe: async function* ({ signal }: { signal: AbortSignal }) {
+      subscribe: async function* ({ signal, types }: { signal: AbortSignal; types?: string[] }) {
         ctx.signal = signal;
+        ctx.subscribedTypes = types;
+        ctx.subscribeCalls++;
+        const planned = ctx.streamPlan.shift();
+        if (planned instanceof Error) throw planned;
+        if (planned === "end") return;
         const abort = () => wake?.();
         signal.addEventListener("abort", abort, { once: true });
         try {
@@ -327,6 +393,8 @@ function fakeContext(messages: any[] = []) {
             if (!queue.length) await new Promise<void>((resolve) => { wake = resolve; });
             if (signal.aborted) break;
             const item = queue.shift()!;
+            // The server only delivers the requested types, so the fake must too.
+            if (types && !types.includes(item.event.type)) { item.done(); continue; }
             yield item.event;
             item.done();
           }
@@ -347,6 +415,10 @@ function userMessage() {
 
 function sessionFile(sessionID: string): string {
   return join(home, ".mempalace", "opencode-sessions", `${sessionID}.jsonl`);
+}
+
+function captureLog(): string {
+  return join(home, ".mempalace", "opencode-sessions", "capture.log");
 }
 
 async function oldSession(sessionID: string, ageDays: number) {

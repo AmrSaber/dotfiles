@@ -1,31 +1,21 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { link, open, readdir, realpath, rename, rm } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { link, mkdir, open, readdir, realpath, rename, rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 type MineResult = {
   content?: string | ReadonlyArray<{ type: string; text?: string }>;
 };
 
-// shortcut: in-process lock only, a second OpenCode process could still race on the config files; replace if that happens.
-let pending: Promise<unknown> = Promise.resolve();
+type LockOptions = { signal?: AbortSignal; lockPath?: string; waitSeconds?: number };
 
-export function mineDirectories(
+export async function mineDirectories(
   root: string,
   directories: string[],
   mine: (source: string) => Promise<MineResult>,
   beforeWrite: (sources: string[]) => Promise<void>,
-): Promise<string> {
-  const run = pending.then(() => mineExclusively(root, directories, mine, beforeWrite));
-  pending = run.catch(() => undefined);
-  return run;
-}
-
-async function mineExclusively(
-  root: string,
-  directories: string[],
-  mine: (source: string) => Promise<MineResult>,
-  beforeWrite: (sources: string[]) => Promise<void>,
+  options: LockOptions = {},
 ): Promise<string> {
   root = await realpath(root);
   const selected = [...new Set(directories.map((directory) => resolve(directory)))].sort();
@@ -40,10 +30,12 @@ async function mineExclusively(
 
   for (const source of sources) await preflightConfig(source);
   await beforeWrite([...sources]);
-  for (const source of sources) await preflightConfig(source);
 
+  // Lock after the permission prompt so approval time doesn't count towards the wait.
+  const release = await acquireMineLock(options);
   // The configs are generated routing input only; remove them even if writing or mining fails.
   try {
+    for (const source of sources) await preflightConfig(source);
     for (const source of sources) {
       await validateDirectory(root, source);
       await writeConfig(source, roomName(relative(root, source)));
@@ -66,6 +58,56 @@ async function mineExclusively(
     return completed.join("\n\n") || "No Markdown directories found.";
   } finally {
     await Promise.all(sources.map(removeConfig));
+    await release();
+  }
+}
+
+// Serialize writers across processes: a helper holds flock while its stdin stays open, so the
+// lock frees itself if this process dies. Waiters give up after waitSeconds.
+// shortcut: separate from the sweeper's lock, so a mine can still overlap a palace repair rebuild; share it if that bites.
+export async function acquireMineLock(
+  { signal, lockPath = join(homedir(), ".mempalace", "organic-facts-mine.lock"), waitSeconds = 30 }: LockOptions = {},
+): Promise<() => Promise<void>> {
+  signal?.throwIfAborted();
+  await mkdir(dirname(lockPath), { recursive: true });
+  let helper;
+  try {
+    helper = Bun.spawn(
+      ["flock", "-w", String(waitSeconds), "-E", "75", lockPath, "sh", "-c", "echo locked; cat >/dev/null"],
+      { stdin: "pipe", stdout: "pipe", stderr: "pipe" },
+    );
+  } catch (error) {
+    throw new Error("Mining needs flock (util-linux) to serialize writers.", { cause: error });
+  }
+  const abort = () => helper.kill();
+  signal?.addEventListener("abort", abort, { once: true });
+  const release = async () => {
+    await helper.stdin.end();
+    await helper.exited;
+  };
+  try {
+    const reader = helper.stdout.getReader();
+    const first = await reader.read();
+    reader.releaseLock();
+    if (new TextDecoder().decode(first.value ?? new Uint8Array()).includes("locked")) {
+      // Past this point an abort must not kill the helper: that would free the lock mid-write.
+      signal?.removeEventListener("abort", abort);
+      if (signal?.aborted) {
+        await release();
+        signal.throwIfAborted();
+      }
+      return release;
+    }
+    const code = await helper.exited;
+    signal?.throwIfAborted();
+    if (code === 75) {
+      throw new Error(`Another organic-facts mine holds the lock; waited ${waitSeconds}s. Try again shortly.`);
+    }
+    throw new Error(`Could not take the mining lock (flock exit ${code}): ${(await new Response(helper.stderr).text()).trim()}`);
+  } catch (error) {
+    signal?.removeEventListener("abort", abort);
+    helper.kill();
+    throw error;
   }
 }
 

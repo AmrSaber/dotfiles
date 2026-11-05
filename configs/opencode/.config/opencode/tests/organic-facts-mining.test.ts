@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { mineDirectories as mineWithPermission, roomName } from "../plugins/mempalace/mining";
+import { acquireMineLock, mineDirectories as mineWithPermission, roomName } from "../plugins/mempalace/mining";
 
 function mineDirectories(root: string, directories: string[], mine: Parameters<typeof mineWithPermission>[2]) {
   return mineWithPermission(root, directories, mine, async () => {});
@@ -380,6 +380,114 @@ describe("mineDirectories", () => {
     })).toBe("No Markdown directories found.");
     expect(calls).toBe(0);
     await expect(readFile(join(root, "mempalace.yaml"))).rejects.toThrow();
+  });
+});
+
+describe("mine lock", () => {
+  async function lockPath() {
+    return join(await fixture(), "mine.lock");
+  }
+
+  test("a second holder waits for release and then proceeds", async () => {
+    const path = await lockPath();
+    const first = await acquireMineLock({ lockPath: path });
+    let acquired = false;
+    const second = acquireMineLock({ lockPath: path, waitSeconds: 5 }).then((release) => {
+      acquired = true;
+      return release;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(acquired).toBe(false);
+    await first();
+    await (await second)();
+    expect(acquired).toBe(true);
+  });
+
+  test("a waiter gives up with a clear error after the wait limit", async () => {
+    const path = await lockPath();
+    const held = await acquireMineLock({ lockPath: path });
+    const started = Date.now();
+    await expect(acquireMineLock({ lockPath: path, waitSeconds: 1 })).rejects.toThrow("Another organic-facts mine holds the lock");
+    expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+    await held();
+  });
+
+  test("cancelling a waiter stops it without freeing the holder's lock", async () => {
+    const path = await lockPath();
+    const held = await acquireMineLock({ lockPath: path });
+    const controller = new AbortController();
+    const waiting = acquireMineLock({ lockPath: path, waitSeconds: 10, signal: controller.signal });
+    setTimeout(() => controller.abort(), 200);
+    await expect(waiting).rejects.toThrow();
+    await expect(acquireMineLock({ lockPath: path, waitSeconds: 1 })).rejects.toThrow("holds the lock");
+    await held();
+    await (await acquireMineLock({ lockPath: path, waitSeconds: 2 }))();
+  });
+
+  test("an already-cancelled call never takes the lock", async () => {
+    const path = await lockPath();
+    const controller = new AbortController();
+    controller.abort();
+    await expect(acquireMineLock({ lockPath: path, signal: controller.signal })).rejects.toThrow();
+    await (await acquireMineLock({ lockPath: path, waitSeconds: 1 }))();
+  });
+
+  test("the lock frees itself when the holding process dies", async () => {
+    const path = await lockPath();
+    const miningModule = join(import.meta.dir, "../plugins/mempalace/mining.ts");
+    const holder = Bun.spawn(["bun", "-e", `
+      const { acquireMineLock } = await import(${JSON.stringify(miningModule)});
+      await acquireMineLock({ lockPath: ${JSON.stringify(path)} });
+      console.log("locked");
+      await new Promise(() => {});
+    `], { stdout: "pipe", stderr: "inherit" });
+    const reader = holder.stdout.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain("locked");
+    await expect(acquireMineLock({ lockPath: path, waitSeconds: 1 })).rejects.toThrow("holds the lock");
+    holder.kill("SIGKILL");
+    await holder.exited;
+    await (await acquireMineLock({ lockPath: path, waitSeconds: 3 }))();
+  });
+
+  test("an unrelated flock failure is reported, not mistaken for contention", async () => {
+    const root = await fixture();
+    await writeFile(join(root, "a-file"), "");
+    await expect(acquireMineLock({ lockPath: join(root, "a-file", "mine.lock") })).rejects.toThrow();
+  });
+
+  test("mineDirectories holds the lock for the whole run and releases it afterwards", async () => {
+    const root = await fixture();
+    await document(root, "topic/a.md");
+    const path = await lockPath();
+    let during: unknown;
+    await mineWithPermission(root, [root], async () => {
+      during = await acquireMineLock({ lockPath: path, waitSeconds: 1 }).catch((error) => error);
+      return success();
+    }, async () => {}, { lockPath: path });
+    expect(String(during)).toContain("holds the lock");
+    await (await acquireMineLock({ lockPath: path, waitSeconds: 1 }))();
+  });
+
+  test("a failed run still releases the lock and removes configs", async () => {
+    const root = await fixture();
+    await document(root, "topic/a.md");
+    const path = await lockPath();
+    await expect(mineWithPermission(root, [root], async () => {
+      throw new Error("Cancelled.");
+    }, async () => {}, { lockPath: path })).rejects.toThrow("Cancelled.");
+    await expect(readFile(join(root, "topic/mempalace.yaml"))).rejects.toThrow();
+    await (await acquireMineLock({ lockPath: path, waitSeconds: 1 }))();
+  });
+
+  test("permission denial happens before the lock is taken", async () => {
+    const root = await fixture();
+    await document(root, "topic/a.md");
+    const path = await lockPath();
+    const held = await acquireMineLock({ lockPath: path });
+    await expect(mineWithPermission(root, [root], async () => success(), async () => {
+      throw new Error("Permission denied.");
+    }, { lockPath: path, waitSeconds: 1 })).rejects.toThrow("Permission denied.");
+    await held();
   });
 });
 

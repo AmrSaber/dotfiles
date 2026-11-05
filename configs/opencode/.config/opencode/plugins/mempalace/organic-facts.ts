@@ -143,6 +143,7 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
               });
             context.signal.throwIfAborted();
           },
+          { signal: context.signal },
         );
         return { content: output };
       },
@@ -181,7 +182,7 @@ function maintenanceInstructions(): string {
     "## Refresh after changes",
     "- After a batch of manual edits, call organic_facts_mine once with updated Markdown paths relative to the canonical directory. Don't mine after reads or unchanged edits.",
     'Example: {"documents": ["Projects/Atlas/architecture.md", "Tools/Editor/memory.md"]}',
-    "- The tool refreshes affected directory trees. It writes temporary plugin-owned mempalace.yaml routing files just before mining and removes them afterwards, without changing notes. Hidden paths stay excluded. Use the stable room IDs from the catalogue for scoped search.",
+    "- The tool refreshes affected directory trees. It writes temporary plugin-owned mempalace.yaml routing files just before mining and removes them afterwards, without changing notes. Concurrent mines wait up to 30 seconds for each other, then fail. Hidden paths stay excluded. Use the stable room IDs from the catalogue for scoped search.",
     "- Check the result: failed refreshes or native skip rules can leave the index older than documents. Don't retry blindly or claim unconfirmed completion.",
     "- Renames and deletions require separate index cleanup. Preview cleanup before applying it and report unresolved stale entries. Mining alone doesn't remove them.",
   ].join("\n\n");

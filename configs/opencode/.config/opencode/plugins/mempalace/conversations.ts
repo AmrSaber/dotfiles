@@ -1,35 +1,65 @@
 import type { Plugin } from "@opencode/plugin";
-import { mkdir, writeFile, readFile, readdir, stat, unlink } from "node:fs/promises";
+import { appendFile, mkdir, writeFile, readFile, readdir, stat, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export async function registerConversations(ctx: Plugin.Context): Promise<() => Promise<void>> {
+export async function registerConversations(
+  ctx: Plugin.Context,
+  { retryDelayMs = 1000 }: { retryDelayMs?: number } = {},
+): Promise<() => Promise<void>> {
   const home = homedir();
   const sessionsDir = join(home, ".mempalace", "opencode-sessions");
   const palaceDir = join(home, ".mempalace", "palace");
   const errorLog = join(palaceDir, "repair-error.log");
+  const captureLog = join(sessionsDir, "capture.log");
   const compactionHook = await ctx.session.hook("compaction", async (event) => {
     if (!isDisabled(process.env.MEMPALACE_HOOKS_AUTO_SAVE)) await capture(event.sessionID);
   });
   const eventController = new AbortController();
-  const events = (async () => {
-    try {
-      for await (const event of ctx.event.subscribe({ signal: eventController.signal })) {
-        if (event.type !== "session.idle" || isDisabled(process.env.MEMPALACE_HOOKS_AUTO_SAVE)) continue;
-        await capture(event.data.sessionID);
-        await pruneOldSessions(event.data.sessionID);
-      }
-    } catch {
-      // Capture failures must not disrupt the session.
-    }
-  })();
+  const events = subscribeWithRetry();
 
   return async () => {
     eventController.abort();
     await compactionHook.dispose();
     await events;
   };
+
+  // The server never publishes session.idle for ordinary turns, so capture on turn-end events.
+  // The event stream is volatile and can end or fail, so resubscribe until the plugin unloads.
+  async function subscribeWithRetry() {
+    const { signal } = eventController;
+    let delay = retryDelayMs;
+    while (!signal.aborted) {
+      try {
+        for await (const event of ctx.event.subscribe({
+          types: ["session.execution.succeeded", "session.execution.interrupted", "session.execution.failed"],
+          signal,
+        })) {
+          delay = retryDelayMs;
+          if (isDisabled(process.env.MEMPALACE_HOOKS_AUTO_SAVE)) continue;
+          await capture(event.data.sessionID);
+          await pruneOldSessions(event.data.sessionID);
+        }
+        if (!signal.aborted) await logFailure("event stream ended");
+      } catch (error) {
+        if (!signal.aborted) await logFailure(`event stream failed: ${String(error)}`);
+      }
+      await sleep(delay, signal);
+      delay = Math.min(delay * 2, 60_000);
+    }
+  }
+
+  // A logger is not exposed to plugins and console output is dropped, so keep a file beside the transcripts.
+  // shortcut: unbounded append, fine for rare failures; trim it like sweep.log if it ever grows.
+  async function logFailure(message: string) {
+    try {
+      await mkdir(sessionsDir, { recursive: true });
+      await appendFile(captureLog, `[${new Date().toISOString()}] ${message}\n`, "utf8");
+    } catch {
+      // Logging must never disrupt the session.
+    }
+  }
 
   async function capture(sessionID: string) {
     if (!sessionID) return;
@@ -104,6 +134,14 @@ export async function registerConversations(ctx: Plugin.Context): Promise<() => 
       // The directory might not exist yet.
     }
   }
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }, { once: true });
+  });
 }
 
 function isDisabled(value: string | undefined): boolean {
