@@ -9,7 +9,7 @@ export async function registerConversations(
   { retryDelayMs = 1000 }: { retryDelayMs?: number } = {},
 ): Promise<() => Promise<void>> {
   const home = homedir();
-  const sessionsDir = join(home, ".mempalace", "opencode-sessions");
+  const sessionsDir = sessionsDirectory(home);
   const palaceDir = join(home, ".mempalace", "palace");
   const errorLog = join(palaceDir, "repair-error.log");
   const captureLog = join(sessionsDir, "capture.log");
@@ -134,6 +134,10 @@ export async function registerConversations(
       // The directory might not exist yet.
     }
   }
+}
+
+export function sessionsDirectory(home = homedir()): string {
+  return join(home, ".mempalace", "opencode-sessions");
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {

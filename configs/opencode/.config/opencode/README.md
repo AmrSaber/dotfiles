@@ -11,9 +11,10 @@ The system prompt contains reading guidance, an upkeep reminder, and fresh entit
 | `plugins/mempalace.ts` | Register the integration and clean it up. |
 | `conversations.ts` | Capture transcripts when a turn ends, is interrupted, or fails, and before compaction; resubscribe if the event stream drops; prune old transcript files. |
 | `memory-context.ts` | Inject the memory protocol, current KG entities, and repair alerts. |
-| `organic-facts.ts` | Register the maintenance skill, topic catalogue, and mining tool. |
-| `mining.ts` | Validate directory trees, route rooms, and publish owned mining configuration. |
+| `organic-facts.ts` | Register the maintenance skill, topic catalogue, and mining tool; remove the locking MCP tools. |
+| `mining.ts` | Validate directory trees, route rooms, publish owned mining configuration, and run the mine script. |
 | `mempalace-sweep.sh` | Coalesce detached sweeps and preserve repair/recovery safeguards. |
+| `mempalace-mine.sh` | Mine one facts directory in a short-lived process under the sweeper's lock. |
 
 Implementation modules and the sweeper live under `plugins/mempalace/`. That directory has no separate entrypoint or package manifest.
 
@@ -69,9 +70,17 @@ Call the tool after a batch of edits:
 {"documents": ["Projects/Atlas/architecture.md", "Tools/Editor/memory.md"]}
 ```
 
-`organic_facts_mine` accepts existing Markdown paths relative to the facts directory. It validates the entire list, rejects escapes and hidden inputs, and scans the affected parent directory trees. Every document-containing directory gets a shallow Markdown-only mining pass, so nested topics keep their own rooms. Hidden files and directories stay out of the index. The tool calls the existing MemPalace MCP mining tool and respects its permission and writer locks. It also checks `edit` and applicable `external_directory` permissions before writing routing files. Connect exactly one MemPalace mining tool.
+`organic_facts_mine` accepts existing Markdown paths relative to the facts directory. It validates the entire list, rejects escapes and hidden inputs, and scans the affected parent directory trees. Every document-containing directory gets a shallow Markdown-only mining pass, so nested topics keep their own rooms. Hidden files and directories stay out of the index. It checks `edit` and applicable `external_directory` permissions before writing routing files.
 
-The tool writes plugin-owned `mempalace.yaml` routing files beside notes just before mining and removes them afterwards, even if mining fails. It holds a blocking `flock` on `~/.mempalace/organic-facts-mine.lock` for the whole write, mine, and remove sequence, so mining runs from any process wait their turn for up to 30 seconds and then fail with a clear error. A helper process holds the lock, so a crash frees it. The lock is separate from the sweeper's, so a mine can still overlap a palace repair rebuild. Add `mempalace.yaml` to the facts repository's `.gitignore` in case a crash leaves a file behind. The tool never rewrites Markdown or replaces unrelated project configuration. MemPalace room filters reject slashes, so the catalogue maps grouped paths to readable room IDs with stable hashes. Use those IDs with `wing="organic-facts"` for scoped search; root-level documents use `general`.
+Each directory is mined by `mempalace-mine.sh`, a short-lived `mempalace mine` process. The script takes the sweeper's lock (`opencode-sessions/sweep.lock`), so a mine never overlaps a sweep or a palace repair rebuild, and it retries up to five times while another writer holds the palace lock. Captures that arrive during a mine are swept when it finishes. The palace lock is held only while `mempalace mine` runs.
+
+The tool writes plugin-owned `mempalace.yaml` routing files beside notes just before mining and removes them afterwards, even if mining fails. Add `mempalace.yaml` to the facts repository's `.gitignore` in case a crash leaves a file behind. The tool never rewrites Markdown or replaces unrelated project configuration. MemPalace room filters reject slashes, so the catalogue maps grouped paths to readable room IDs with stable hashes. Use those IDs with `wing="organic-facts"` for scoped search; root-level documents use `general`.
+
+## Disabled MemPalace MCP tools
+
+The MemPalace MCP server takes an exclusive palace lock on its first non-exempt write and keeps it until the server exits. Every sweep after that fails with "palace is held by PID ...". The plugin therefore removes the 12 MCP tools that take the lock: the drawer writes, updates and deletes, `mempalace_checkpoint`, `mempalace_diary_write`, `mempalace_mine`, `mempalace_sync`, and the tunnel and hallway writes. The knowledge-graph, logstream, and read tools stay.
+
+The injected memory protocol tells agents the tools are disabled and to discuss a lock-free alternative with you. Add one the way conversation capture and `organic_facts_mine` work: run short-lived `mempalace` commands under the sweeper's lock. The list lives in `LOCKING_MCP_TOOLS` and mirrors `_MUTATING_TOOLS` minus `_PEER_WRITER_EXEMPT_TOOLS` in mempalace 3.11. Recheck it after upgrades.
 
 Read original documents for context and citations. Mining does not clean up deleted or renamed sources. Review MemPalace's cleanup preview separately. Failed refreshes can leave the index older than the documents, and successful mining can skip files under MemPalace's size, ignore, or minimum-content rules.
 

@@ -116,7 +116,7 @@ function context() {
   const registration = () => ({ dispose: async () => { fixture.disposals++; } });
   fixture.ctx = {
     skill: { transform: async (callback: any) => { callback({ add: (skill: any) => fixture.skills.push(skill) }); return registration(); } },
-    tool: { transform: async (callback: any) => { callback({ add: (tool: any) => fixture.tools.push(tool) }); return registration(); } },
+    tool: { transform: async (callback: any) => { callback({ add: (tool: any) => fixture.tools.push(tool), list: () => [], remove: () => {} }); return registration(); } },
     session: {
       hook: async (name: string, hook: any) => { hooks.set(name, [...(hooks.get(name) ?? []), hook]); return registration(); },
       context: async () => { fixture.contextReads++; return []; },

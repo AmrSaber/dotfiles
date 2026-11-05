@@ -11,7 +11,25 @@ import {
   sep,
 } from "node:path";
 import { fileURLToPath } from "node:url";
-import { mineDirectories, roomName } from "./mining";
+import { sessionsDirectory } from "./conversations";
+import { mineDirectories, roomName, runMineScript } from "./mining";
+
+// The MemPalace MCP tools that take the exclusive palace lock; the knowledge-graph and logstream tools do not.
+// shortcut: mirrors _MUTATING_TOOLS minus _PEER_WRITER_EXEMPT_TOOLS in mempalace 3.11; recheck after upgrades.
+export const LOCKING_MCP_TOOLS = [
+  "mempalace_add_drawer",
+  "mempalace_checkpoint",
+  "mempalace_create_tunnel",
+  "mempalace_delete_by_source",
+  "mempalace_delete_drawer",
+  "mempalace_delete_drawers",
+  "mempalace_delete_hallway",
+  "mempalace_delete_tunnel",
+  "mempalace_diary_write",
+  "mempalace_mine",
+  "mempalace_sync",
+  "mempalace_update_drawer",
+];
 
 export async function registerOrganicFacts(ctx: Plugin.Context) {
   const skillRegistration = await ctx.skill.transform((skills) => {
@@ -57,6 +75,8 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
   });
 
   const toolRegistration = await ctx.tool.transform((tools) => {
+    // These tools take the palace lock for as long as their MCP server lives, which blocks every sweep.
+    for (const { id } of tools.list()) if (LOCKING_MCP_TOOLS.some((name) => id.endsWith(`_${name}`))) tools.remove(id);
     tools.add({
       name: "organic_facts_mine",
       description:
@@ -80,14 +100,6 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
         context.signal.throwIfAborted();
         const root = await realpath(factsDirectory());
         const directories = await miningDirectories(root, documents);
-        const miners = (await ctx.tool.list()).filter((tool) =>
-          tool.id.endsWith("_mempalace_mine"),
-        );
-        if (miners.length !== 1)
-          throw new Error(
-            "Connect exactly one MemPalace MCP mining tool before mining organic facts.",
-          );
-        const [mine] = miners;
         const permissionContext = {
           sessionID: context.sessionID,
           agent: context.agent,
@@ -97,11 +109,6 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
             id: context.id,
           },
         } as const;
-        await ctx.permission.assert({
-          ...permissionContext,
-          action: mine.id,
-          resources: ["*"],
-        });
         await context.progress({
           status: `Mining ${directories.length} organic-facts directory tree(s)`,
         });
@@ -113,10 +120,7 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
             await context.progress({
               status: `Mining ${relative(root, source) || "."}`,
             });
-            return mine.execute(
-              { source, mode: "projects", wing: "organic-facts" },
-              context,
-            );
+            return runMineScript(source, sessionsDirectory());
           },
           async (sources) => {
             await ctx.permission.assert({
@@ -143,7 +147,6 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
               });
             context.signal.throwIfAborted();
           },
-          { signal: context.signal },
         );
         return { content: output };
       },
@@ -182,7 +185,7 @@ function maintenanceInstructions(): string {
     "## Refresh after changes",
     "- After a batch of manual edits, call organic_facts_mine once with updated Markdown paths relative to the canonical directory. Don't mine after reads or unchanged edits.",
     'Example: {"documents": ["Projects/Atlas/architecture.md", "Tools/Editor/memory.md"]}',
-    "- The tool refreshes affected directory trees. It writes temporary plugin-owned mempalace.yaml routing files just before mining and removes them afterwards, without changing notes. Concurrent mines wait up to 30 seconds for each other, then fail. Hidden paths stay excluded. Use the stable room IDs from the catalogue for scoped search.",
+    "- The tool refreshes affected directory trees. It writes temporary plugin-owned mempalace.yaml routing files just before mining and removes them afterwards, without changing notes. Each directory is mined by a separate short-lived `mempalace mine` process that waits for any running sweep, so the palace lock is not held after the tool returns. Hidden paths stay excluded. Use the stable room IDs from the catalogue for scoped search.",
     "- Check the result: failed refreshes or native skip rules can leave the index older than documents. Don't retry blindly or claim unconfirmed completion.",
     "- Renames and deletions require separate index cleanup. Preview cleanup before applying it and report unresolved stale entries. Mining alone doesn't remove them.",
   ].join("\n\n");

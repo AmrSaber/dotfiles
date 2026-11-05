@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import * as os from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { registerOrganicFacts, factsDirectory, miningDirectories, topicRooms } from "../plugins/mempalace/organic-facts";
+import { LOCKING_MCP_TOOLS, registerOrganicFacts, factsDirectory, miningDirectories, topicRooms } from "../plugins/mempalace/organic-facts";
 
 const fixtures: string[] = [];
 const originalDirectory = process.env.ORGANIC_FACTS_DIR;
@@ -111,7 +112,7 @@ test("plugin registers an on-demand skill, keeps the primer minimal, and dispose
       return { dispose: async () => { disposals++; } };
     } },
     tool: { transform: async (callback: any) => {
-      callback({ add: (definition: any) => { tool = definition; } });
+      callback({ add: (definition: any) => { tool = definition; }, list: () => [], remove: () => {} });
       return { dispose: async () => { disposals++; } };
     } },
   } as any);
@@ -163,83 +164,149 @@ test("plugin registers an on-demand skill, keeps the primer minimal, and dispose
   expect(disposals).toBe(3);
 });
 
-test("mining calls the existing MCP writer after checking its permission", async () => {
-  const root = await fixture();
-  process.env.ORGANIC_FACTS_DIR = root;
-  const file = await document(root, "Projects/Atlas/architecture.md");
-  const original = await readFile(file, "utf8");
-  let tool: any;
-  const actions: string[] = [];
-  const controller = new AbortController();
-  const context = { sessionID: "session", agent: "agent", messageID: "message", id: "call", signal: controller.signal, progress: async () => {} };
-  await registerOrganicFacts({
-    location: { directory: root },
-    skill: { transform: async () => ({ dispose: async () => {} }) },
-    session: { hook: async () => ({ dispose: async () => {} }) },
-    permission: { assert: async (input: any) => { actions.push(input.action); } },
-    tool: {
-      transform: async (callback: any) => {
-        callback({ add: (definition: any) => { tool = definition; } });
-        return { dispose: async () => {} };
-      },
-      list: async () => [{ id: "mempalace_mempalace_mine", execute: async (input: any, passedContext: any) => {
-        expect(actions).toEqual(["mempalace_mempalace_mine", "edit"]);
-        expect(input).toEqual({ source: join(root, "Projects/Atlas"), mode: "projects", wing: "organic-facts" });
-        expect(passedContext).toBe(context);
-        return { content: JSON.stringify({ success: true, output: "Native miner completed" }) };
-      } }],
-    },
-  } as any);
-  await expect(tool.execute({ documents: ["Projects/Atlas/architecture.md"] }, context)).resolves.toMatchObject({ content: expect.stringContaining("Native miner completed") });
-  expect(await readFile(file, "utf8")).toBe(original);
-});
+const permissionlessContext = (signal = new AbortController().signal) =>
+  ({ sessionID: "session", agent: "agent", messageID: "message", id: "call", signal, progress: async () => {} });
 
-test("a denied edit permission leaves routing files untouched", async () => {
-  const root = await fixture();
+async function register(root: string, actions: string[] = [], location = root) {
   process.env.ORGANIC_FACTS_DIR = root;
-  await document(root, "topic.md");
   let tool: any;
-  await registerOrganicFacts({
-    location: { directory: root },
-    skill: { transform: async () => ({ dispose: async () => {} }) },
-    session: { hook: async () => ({ dispose: async () => {} }) },
-    permission: { assert: async ({ action }: any) => { if (action === "edit") throw new Error("denied"); } },
-    tool: {
-      transform: async (callback: any) => {
-        callback({ add: (definition: any) => { tool = definition; } });
-        return { dispose: async () => {} };
-      },
-      list: async () => [{ id: "mempalace_mempalace_mine", execute: async () => { throw new Error("must not run"); } }],
-    },
-  } as any);
-  await expect(tool.execute({ documents: ["topic.md"] }, { signal: new AbortController().signal, progress: async () => {} })).rejects.toThrow("denied");
-  await expect(readFile(join(root, "mempalace.yaml"))).rejects.toThrow();
-});
-
-test("an external-directory denial prevents writes outside the location", async () => {
-  const root = await fixture();
-  const location = await fixture();
-  process.env.ORGANIC_FACTS_DIR = root;
-  await document(root, "topic.md");
-  let tool: any;
-  const actions: string[] = [];
   await registerOrganicFacts({
     location: { directory: location },
     skill: { transform: async () => ({ dispose: async () => {} }) },
     session: { hook: async () => ({ dispose: async () => {} }) },
-    permission: { assert: async ({ action, resources }: any) => {
-      actions.push(action);
-      if (action === "external_directory" && resources.includes(`${root}/*`)) throw new Error("external denied");
+    permission: { assert: async (input: any) => { actions.push(input.action); } },
+    tool: { transform: async (callback: any) => {
+      callback({ add: (definition: any) => { tool = definition; }, list: () => [], remove: () => {} });
+      return { dispose: async () => {} };
     } },
-    tool: {
-      transform: async (callback: any) => {
-        callback({ add: (definition: any) => { tool = definition; } });
-        return { dispose: async () => {} };
-      },
-      list: async () => [{ id: "mempalace_mempalace_mine", execute: async () => { throw new Error("must not run"); } }],
-    },
   } as any);
-  await expect(tool.execute({ documents: ["topic.md"] }, { signal: new AbortController().signal, progress: async () => {} })).rejects.toThrow("external denied");
-  expect(actions).toEqual(["mempalace_mempalace_mine", "edit", "external_directory"]);
-  await expect(readFile(join(root, "mempalace.yaml"))).rejects.toThrow();
+  return tool;
+}
+
+describe("out-of-process mining", () => {
+  // A stub `mempalace` on PATH records its arguments; HOME is scratch so nothing real is touched.
+  async function stub(script = 'echo "stub mined $2"') {
+    const bin = await fixture();
+    await writeFile(join(bin, "mempalace"), `#!/bin/sh\necho "$@" >> "${bin}/calls.log"\n${script}\n`);
+    await chmod(join(bin, "mempalace"), 0o755);
+    return bin;
+  }
+
+  async function withEnvironment<T>(bin: string, home: string, run: () => Promise<T>) {
+    const savedPath = process.env.PATH;
+    process.env.PATH = `${bin}:${savedPath}`;
+    const homeMock = spyOn(os, "homedir").mockReturnValue(home);
+    try { return await run(); } finally {
+      process.env.PATH = savedPath;
+      homeMock.mockRestore();
+    }
+  }
+
+  test("mines each directory through the mempalace CLI under the sweeper's lock, with no MCP tool", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "Projects/Atlas/architecture.md");
+    const bin = await stub();
+    const actions: string[] = [];
+    const tool = await register(root, actions);
+    const result = await withEnvironment(bin, home, () => tool.execute({ documents: ["Projects/Atlas/architecture.md"] }, permissionlessContext()));
+    expect(result.content).toContain("stub mined");
+    expect(result.content).toContain(`Source: ${join(root, "Projects/Atlas")}`);
+    expect(await readFile(join(bin, "calls.log"), "utf8")).toBe(`mine ${join(root, "Projects/Atlas")} --mode projects --wing organic-facts\n`);
+    expect(actions).toEqual(["edit"]);
+    await expect(readFile(join(root, "Projects/Atlas/mempalace.yaml"))).rejects.toThrow();
+  });
+
+  test("the miner sees the generated routing file while it runs", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "topic.md");
+    const bin = await stub('cat "$2/mempalace.yaml" >> "' + "$BIN" + '/seen.log"');
+    await writeFile(join(bin, "mempalace"), (await readFile(join(bin, "mempalace"), "utf8")).replace("$BIN", bin));
+    const tool = await register(root);
+    await withEnvironment(bin, home, () => tool.execute({ documents: ["topic.md"] }, permissionlessContext()));
+    const seen = JSON.parse(await readFile(join(bin, "seen.log"), "utf8"));
+    expect(seen).toMatchObject({ _organic_facts: 1, wing: "organic-facts" });
+    await expect(readFile(join(root, "mempalace.yaml"))).rejects.toThrow();
+  });
+
+  test("a held palace lock is retried, then reported when it never frees", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "topic.md");
+    const bin = await stub('echo "mempalace: palace /p is held by PID 1 (-); wait for it to finish" ; exit 1');
+    const tool = await register(root);
+    const saved = process.env.MP_RETRY_BASE;
+    process.env.MP_RETRY_BASE = "0";
+    try {
+      await expect(withEnvironment(bin, home, () => tool.execute({ documents: ["topic.md"] }, permissionlessContext()))).rejects.toThrow(/Mining failed.*held by PID 1/s);
+    } finally {
+      if (saved === undefined) delete process.env.MP_RETRY_BASE; else process.env.MP_RETRY_BASE = saved;
+    }
+    expect((await readFile(join(bin, "calls.log"), "utf8")).trim().split("\n")).toHaveLength(5);
+    await expect(readFile(join(root, "mempalace.yaml"))).rejects.toThrow();
+  });
+
+  test("a non-lock failure is reported at once without retrying", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "topic.md");
+    const bin = await stub('echo "boom: embedding model missing"; exit 2');
+    const tool = await register(root);
+    await expect(withEnvironment(bin, home, () => tool.execute({ documents: ["topic.md"] }, permissionlessContext()))).rejects.toThrow(/boom: embedding model missing/);
+    expect((await readFile(join(bin, "calls.log"), "utf8")).trim().split("\n")).toHaveLength(1);
+  });
+
+  test("a mine waits for a running sweep to release the shared lock", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "topic.md");
+    const bin = await stub();
+    const sessions = join(home, ".mempalace", "opencode-sessions");
+    await mkdir(sessions, { recursive: true });
+    const holder = Bun.spawn(["flock", join(sessions, "sweep.lock"), "sleep", "2"]);
+    await Bun.sleep(300);
+    const tool = await register(root);
+    const started = Date.now();
+    await withEnvironment(bin, home, () => tool.execute({ documents: ["topic.md"] }, permissionlessContext()));
+    expect(Date.now() - started).toBeGreaterThan(1000);
+    await holder.exited;
+  });
+
+  test("captures that lost the lock race during a mine are swept afterwards", async () => {
+    const root = await fixture();
+    const home = await fixture();
+    await document(root, "topic.md");
+    const bin = await stub();
+    const sessions = join(home, ".mempalace", "opencode-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "sweep.dirty"), "");
+    const tool = await register(root);
+    await withEnvironment(bin, home, () => tool.execute({ documents: ["topic.md"] }, permissionlessContext()));
+    expect((await readFile(join(bin, "calls.log"), "utf8")).trim().split("\n")).toEqual([
+      `mine ${root} --mode projects --wing organic-facts`,
+      `sweep ${sessions}`,
+    ]);
+    await expect(readFile(join(sessions, "sweep.dirty"))).rejects.toThrow();
+  });
+});
+
+test("every palace-locking MCP tool is removed, and tools that take no lock are kept", async () => {
+  const root = await fixture();
+  process.env.ORGANIC_FACTS_DIR = root;
+  // Real tool IDs are the MCP server name plus the tool name, which already starts with "mempalace_".
+  const lockingIds = LOCKING_MCP_TOOLS.map((name) => `mempalace_${name}`);
+  const present = [...lockingIds, "mempalace_mempalace_search", "mempalace_mempalace_kg_add", "mempalace_mempalace_status", "read"];
+  const removed: string[] = [];
+  await registerOrganicFacts({
+    skill: { transform: async () => ({ dispose: async () => {} }) },
+    session: { hook: async () => ({ dispose: async () => {} }) },
+    tool: { transform: async (callback: any) => {
+      callback({ add: () => {}, list: () => present.map((id) => ({ id })), remove: (id: string) => removed.push(id) });
+      return { dispose: async () => {} };
+    } },
+  } as any);
+  expect(removed.sort()).toEqual(lockingIds.sort());
+  expect(LOCKING_MCP_TOOLS).toHaveLength(12);
+  expect(removed).not.toContain("mempalace_mempalace_kg_add");
 });

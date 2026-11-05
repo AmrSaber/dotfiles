@@ -1,21 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { link, mkdir, open, readdir, realpath, rename, rm } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-type MineResult = {
-  content?: string | ReadonlyArray<{ type: string; text?: string }>;
-};
-
-type LockOptions = { signal?: AbortSignal; lockPath?: string; waitSeconds?: number };
+const WING = "organic-facts";
 
 export async function mineDirectories(
   root: string,
   directories: string[],
-  mine: (source: string) => Promise<MineResult>,
+  mine: (source: string) => Promise<string>,
   beforeWrite: (sources: string[]) => Promise<void>,
-  options: LockOptions = {},
 ): Promise<string> {
   root = await realpath(root);
   const selected = [...new Set(directories.map((directory) => resolve(directory)))].sort();
@@ -31,8 +26,6 @@ export async function mineDirectories(
   for (const source of sources) await preflightConfig(source);
   await beforeWrite([...sources]);
 
-  // Lock after the permission prompt so approval time doesn't count towards the wait.
-  const release = await acquireMineLock(options);
   // The configs are generated routing input only; remove them even if writing or mining fails.
   try {
     for (const source of sources) await preflightConfig(source);
@@ -46,7 +39,7 @@ export async function mineDirectories(
       const room = roomName(relative(root, source));
       try {
         await validateDirectory(root, source);
-        const output = nativeOutput(await mine(source));
+        const output = await mine(source);
         completed.push(`Source: ${source}\nRoom: ${room}\n${output}`);
       } catch (error) {
         throw new Error(
@@ -58,57 +51,33 @@ export async function mineDirectories(
     return completed.join("\n\n") || "No Markdown directories found.";
   } finally {
     await Promise.all(sources.map(removeConfig));
-    await release();
   }
 }
 
-// Serialize writers across processes: a helper holds flock while its stdin stays open, so the
-// lock frees itself if this process dies. Waiters give up after waitSeconds.
-// shortcut: separate from the sweeper's lock, so a mine can still overlap a palace repair rebuild; share it if that bites.
-export async function acquireMineLock(
-  { signal, lockPath = join(homedir(), ".mempalace", "organic-facts-mine.lock"), waitSeconds = 30 }: LockOptions = {},
-): Promise<() => Promise<void>> {
-  signal?.throwIfAborted();
-  await mkdir(dirname(lockPath), { recursive: true });
-  let helper;
-  try {
-    helper = Bun.spawn(
-      ["flock", "-w", String(waitSeconds), "-E", "75", lockPath, "sh", "-c", "echo locked; cat >/dev/null"],
-      { stdin: "pipe", stdout: "pipe", stderr: "pipe" },
-    );
-  } catch (error) {
-    throw new Error("Mining needs flock (util-linux) to serialize writers.", { cause: error });
-  }
-  const abort = () => helper.kill();
-  signal?.addEventListener("abort", abort, { once: true });
-  const release = async () => {
-    await helper.stdin.end();
-    await helper.exited;
-  };
-  try {
-    const reader = helper.stdout.getReader();
-    const first = await reader.read();
-    reader.releaseLock();
-    if (new TextDecoder().decode(first.value ?? new Uint8Array()).includes("locked")) {
-      // Past this point an abort must not kill the helper: that would free the lock mid-write.
-      signal?.removeEventListener("abort", abort);
-      if (signal?.aborted) {
-        await release();
-        signal.throwIfAborted();
-      }
-      return release;
-    }
-    const code = await helper.exited;
-    signal?.throwIfAborted();
-    if (code === 75) {
-      throw new Error(`Another organic-facts mine holds the lock; waited ${waitSeconds}s. Try again shortly.`);
-    }
-    throw new Error(`Could not take the mining lock (flock exit ${code}): ${(await new Response(helper.stderr).text()).trim()}`);
-  } catch (error) {
-    signal?.removeEventListener("abort", abort);
-    helper.kill();
-    throw error;
-  }
+// Run `mempalace mine` as its own process: the MCP mine tool would hold the palace lock until its server exits.
+// The script also takes the sweeper's lock, so a mine and a sweep or repair never overlap.
+export async function runMineScript(source: string, sessionsDir: string): Promise<string> {
+  await mkdir(sessionsDir, { recursive: true });
+  const child = Bun.spawn(["sh", join(dirname(fileURLToPath(import.meta.url)), "mempalace-mine.sh"), source], {
+    env: {
+      ...process.env,
+      MP_WING: WING,
+      MP_LOCK: join(sessionsDir, "sweep.lock"),
+      MP_DIRTY: join(sessionsDir, "sweep.dirty"),
+      MP_LOG: join(sessionsDir, "sweep.log"),
+      MP_SESSIONS: sessionsDir,
+    },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  // A started mine runs to completion: killing it mid-write could leave a partial index.
+  const [output, errors, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  if (code !== 0) throw new Error(errors.trim() || output.trim() || `mempalace-mine.sh exited ${code}`);
+  return output.trim();
 }
 
 async function validateDirectory(root: string, directory: string): Promise<void> {
@@ -172,7 +141,7 @@ async function writeConfig(source: string, room: string): Promise<void> {
   const path = join(source, "mempalace.yaml");
   const config = {
     _organic_facts: 1,
-    wing: "organic-facts",
+    wing: WING,
     // shortcut: an empty keyword forces native room routing; replace when mine accepts a room override.
     rooms: [{ name: room, keywords: [""] }],
     exclude_patterns: ["*", "!*.[mM][dD]", "*/", ".*"],
@@ -217,20 +186,4 @@ export function roomName(relativePath: string): string {
   const slug = relativePath.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "facts";
   const hash = createHash("sha256").update(relativePath).digest("hex").slice(0, 12);
   return `${slug.slice(0, 115).replace(/-+$/, "")}-${hash}`;
-}
-
-function nativeOutput(result: MineResult): string {
-  const content = typeof result.content === "string"
-    ? result.content
-    : result.content?.filter((part) => part.type === "text").map((part) => part.text ?? "").join("\n");
-  let parsed;
-  try {
-    parsed = JSON.parse(content ?? "");
-  } catch {
-    throw new Error(`Unrecognized native mining result: ${content || "no text content"}`);
-  }
-  if (parsed?.success !== true || typeof parsed.output !== "string") {
-    throw new Error(`Native mining refused or returned an unrecognized result: ${JSON.stringify(parsed)}`);
-  }
-  return parsed.output;
 }
