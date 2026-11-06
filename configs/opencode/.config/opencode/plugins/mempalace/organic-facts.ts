@@ -76,7 +76,9 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
 
   const toolRegistration = await ctx.tool.transform((tools) => {
     // These tools take the palace lock for as long as their MCP server lives, which blocks every sweep.
-    for (const { id } of tools.list()) if (LOCKING_MCP_TOOLS.some((name) => id.endsWith(`_${name}`))) tools.remove(id);
+    for (const { id } of tools.list())
+      if (LOCKING_MCP_TOOLS.some((name) => id.endsWith(`_${name}`)))
+        tools.remove(id);
     tools.add({
       name: "organic_facts_mine",
       description:
@@ -134,9 +136,7 @@ export async function registerOrganicFacts(ctx: Plugin.Context) {
             const external = sources.filter((source) => {
               const path = relative(location, source);
               return (
-                path === ".." ||
-                path.startsWith(`..${sep}`) ||
-                isAbsolute(path)
+                path === ".." || path.startsWith(`..${sep}`) || isAbsolute(path)
               );
             });
             if (external.length)
@@ -177,6 +177,7 @@ function maintenanceInstructions(): string {
     "- Keep summaries concise but include necessary scope. Link to detailed or volatile sources instead of copying lengthy runbooks, configurations, or changing inventories.",
     "- Replace outdated assertions in current notes. Don't accumulate changelogs or migration narration. Don't maintain competing copies in MemPalace's knowledge graph.",
     "## Cite each information block",
+    "> IMPORTANT: Do not document volatile facts like package versions or build numbers, and do not document information about the current machine.",
     "- Add [source: identifiable source (URL, repository path, or message reference) — YYYY-MM-DD] below each section heading or beside an individual assertion.",
     "- Subsections inherit the parent reference unless overridden. Information with different evidence needs its own reference. Never fabricate a citation or date.",
     "- Record the actual capture or inspection date, not the latest edit date. Editing nearby prose doesn't renew verification of old or live-state claims.",
