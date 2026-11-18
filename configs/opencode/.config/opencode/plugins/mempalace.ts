@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin";
 import { registerMemoryContext } from "./mempalace/memory-context";
 import { registerConversations } from "./mempalace/conversations";
-import { registerOrganicFacts } from "./mempalace/organic-facts";
+import { registerToolFilter } from "./mempalace/mcp-tools";
 
 export const MemPalace = Plugin.define({
   id: "mempalace",
@@ -10,7 +10,7 @@ export const MemPalace = Plugin.define({
     try {
       cleanups.push(await registerMemoryContext(ctx));
       cleanups.push(await registerConversations(ctx));
-      cleanups.push(await registerOrganicFacts(ctx));
+      cleanups.push(await registerToolFilter(ctx));
     } catch (error) {
       await Promise.allSettled(cleanups.map((stop) => stop()));
       throw error;

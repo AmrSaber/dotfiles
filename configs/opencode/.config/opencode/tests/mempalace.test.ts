@@ -6,7 +6,7 @@ import * as os from "node:os";
 import { registerConversations } from "../plugins/mempalace/conversations";
 import { registerMemoryContext } from "../plugins/mempalace/memory-context";
 
-const environmentKeys = ["HOME", "MEMPALACE_HOOKS_AUTO_SAVE", "MEMPALACE_SESSION_TTL_DAYS", "MEMPALACE_INJECT_ENTITIES"];
+const environmentKeys = ["HOME", "MEMPALACE_HOOKS_AUTO_SAVE", "MEMPALACE_SESSION_TTL_DAYS"];
 const originalShell = Bun.$;
 let environment: Record<string, string | undefined>;
 let root: string;
@@ -163,7 +163,6 @@ test("a retry waits for the delay and unloading cuts the wait short", async () =
 
 test.each([" FALSE ", "0", "No"])("auto-save opt-out %s leaves memory context active", async (disabled) => {
   process.env.MEMPALACE_HOOKS_AUTO_SAVE = disabled;
-  sqliteOutput = "Editor\n";
   const ctx = fakeContext([userMessage()]);
   cleanups.push(await registerConversations(ctx as any), await registerMemoryContext(ctx as any));
   await oldSession("old-session", 8);
@@ -174,9 +173,6 @@ test.each([" FALSE ", "0", "No"])("auto-save opt-out %s leaves memory context ac
   await expect(readFile(sessionFile("session-1"))).rejects.toThrow();
   const system = await contextText(ctx);
   expect(system).toContain("MemPalace Memory Protocol");
-  expect(system).toContain("- Editor");
-  expect(calls).toHaveLength(1);
-  expect(calls[0].strings[0]).toBe("sqlite3 -readonly ");
 });
 
 test.each([undefined, "invalid"])("TTL %s defaults to seven days and never prunes the active session", async (ttl) => {
@@ -245,29 +241,7 @@ test("launchers keep paths in environment values and share coalescing markers", 
   expect(calls[0].env).toEqual(calls[1].env);
 });
 
-test("entity routing refreshes each request through the same read-only subject SQL", async () => {
-  const ctx = fakeContext();
-  cleanups.push(await registerMemoryContext(ctx as any));
-  sqliteOutput = " Editor \n\nWorkspace\n";
-  const first = await contextText(ctx);
-  expect(first).toContain("- Editor\n- Workspace");
-  sqliteOutput = "Terminal\n";
-  const second = await contextText(ctx);
-  expect(second).toContain("- Terminal");
-  expect(second).not.toContain("- Editor");
-  for (const call of calls) {
-    expect(call.strings).toEqual(["sqlite3 -readonly ", " ", ""]);
-    expect(call.values).toEqual([
-      join(home, ".mempalace", "knowledge_graph.sqlite3"),
-      "SELECT DISTINCT e.name FROM triples t JOIN entities e ON e.id = t.subject WHERE t.valid_to IS NULL ORDER BY e.name;",
-    ]);
-    expect(call.quiet).toBe(true);
-  }
-  expect(calls).toHaveLength(2);
-});
-
-test.each([" false ", "0", "NO"])("entity opt-out %s does not hide the repair alert", async (disabled) => {
-  process.env.MEMPALACE_INJECT_ENTITIES = disabled;
+test("a halted palace shows the repair alert and reads no SQLite", async () => {
   await repairError();
   const ctx = fakeContext();
   cleanups.push(await registerMemoryContext(ctx as any));
@@ -275,52 +249,24 @@ test.each([" false ", "0", "NO"])("entity opt-out %s does not hide the repair al
   expect(system).toContain("<mempalace-alert>");
   expect(system).toContain("indexing is HALTED");
   expect(system).toContain(join(home, ".mempalace", "palace", "repair-error.log"));
-  expect(system).not.toContain("The knowledge graph has current facts");
   expect(calls).toHaveLength(0);
 });
 
-test("repair alerts survive empty, failed, and throwing SQLite reads", async () => {
-  await repairError();
-  const ctx = fakeContext();
-  cleanups.push(await registerMemoryContext(ctx as any));
-  expect(await contextText(ctx)).toContain("indexing is HALTED");
-  sqliteOutput = "Must not inject on failure\n";
-  sqliteExitCode = 1;
-  expect(await contextText(ctx)).not.toContain("- Must not inject");
-  shellFailure = true;
-  expect(await contextText(ctx)).toContain("indexing is HALTED");
-});
-
-test("the protocol separates historical evidence, sparse graph facts, and evolving project notes", async () => {
+test("the protocol disables locking tools and the knowledge graph and leaves out entities", async () => {
+  sqliteOutput = "Atlas\n";
   const ctx = fakeContext();
   cleanups.push(await registerMemoryContext(ctx as any));
   const system = await contextText(ctx);
   for (const text of [
     "Conversations are captured automatically",
-    "No skill is needed for raw capture",
     "historical evidence, not unquestioned current truth",
     "not independent verification",
-    "Historical conversation claims are not confirmed facts",
-    "Organic-facts Markdown is canonical",
-    "small, sparse durable facts and relationships",
-    "less prone to staleness and need infrequent updates",
-    "Small isolated facts belong in the graph, not organic facts",
-    "richer, detailed knowledge about larger projects that evolves over time",
-    "Create useful organic-facts notes and new project groups",
-    "agent permissions and explicit read-only or stop requests",
-    "Do not duplicate full project-document assertions in the graph",
-    "Link to topic documents where useful",
-    "the graph is not limited to pointers",
-    "Reuse existing entities",
-    "provenance and temporal validity",
-    "mempalace_kg_add",
-    "mempalace_kg_invalidate",
-    "mempalace_kg_supersede",
-    "When authorized",
+    "The knowledge graph (`mempalace_kg_*`) is disabled too",
   ]) expect(system).toContain(text);
-  expect(system).not.toContain("source of truth for durable facts");
-  expect(system).not.toContain("kg_add` instead");
-  expect(system).not.toContain("writer lease");
+  expect(system).not.toContain("mempalace-kg-entities");
+  expect(system).not.toContain("kg_add");
+  expect(system).not.toMatch(/organic/i);
+  expect(calls.some((call) => call.strings.join("").includes("sqlite3"))).toBe(false);
 });
 
 test("capture and memory failures remain best-effort and do not remove durable JSONL", async () => {
