@@ -12,7 +12,6 @@ Two independent OpenCode plugins live here.
 | `plugins/mempalace.ts` | Register the MemPalace integration and clean it up. |
 | `plugins/mempalace/conversations.ts` | Capture transcripts when a turn ends, is interrupted, or fails, and before compaction; resubscribe if the event stream drops; prune old transcript files. |
 | `plugins/mempalace/memory-context.ts` | Inject the memory protocol and repair alerts. |
-| `plugins/mempalace/mcp-tools.ts` | Remove the locking MCP tools and the knowledge-graph tools. |
 | `plugins/mempalace/mempalace-sweep.sh` | Coalesce detached sweeps and preserve repair/recovery safeguards. |
 | `plugins/organic-facts.ts` | Inject the organic-facts instructions and the file catalogue. |
 
@@ -31,14 +30,14 @@ The sweeper keeps its dirty-marker handoff, writer lock, bounded log, and segmen
 
 The event stream is volatile. If it ends or fails, capture resubscribes with a backoff (1 second, doubling to 60 seconds) and appends the reason to `~/.mempalace/opencode-sessions/capture.log`. Plugins have no logger, and console output is dropped, so check that file when transcripts stop appearing.
 
-## Disabled MemPalace MCP tools
+## Forbidden MemPalace MCP tools
 
-The plugin removes two groups of MemPalace MCP tools.
+MemPalace loads through mcp-gateway, which doesn't filter tools. The injected memory protocol tells agents never to call two groups.
 
-- **Locking tools.** The MemPalace MCP server takes an exclusive palace lock on its first non-exempt write and keeps it until the server exits. Every sweep after that fails with "palace is held by PID ...". The plugin removes the 12 tools that take the lock: the drawer writes, updates and deletes, `mempalace_checkpoint`, `mempalace_diary_write`, `mempalace_mine`, `mempalace_sync`, and the tunnel and hallway writes. The list lives in `LOCKING_MCP_TOOLS` in `mcp-tools.ts` and mirrors `_MUTATING_TOOLS` minus `_PEER_WRITER_EXEMPT_TOOLS` in mempalace 3.11. Recheck it after upgrades.
+- **Locking tools.** The MemPalace MCP server takes an exclusive palace lock on its first non-exempt write and keeps it until the server exits. Every sweep after that fails with "palace is held by PID ...". The tools are the drawer writes, updates and deletes, `mempalace_checkpoint`, `mempalace_diary_write`, `mempalace_mine`, `mempalace_sync`, and the tunnel and hallway writes.
 - **Knowledge graph.** Every `mempalace_kg_*` tool. Durable knowledge lives in [organic facts](#organic-facts) instead.
 
-The injected memory protocol tells agents the tools are disabled and to discuss a lock-free alternative with you. Add one the way conversation capture works: run short-lived `mempalace` commands under the sweeper's lock.
+When a task needs one of these, agents discuss a lock-free alternative with you. Add one the way conversation capture works: run short-lived `mempalace` commands under the sweeper's lock.
 
 ## Organic facts
 

@@ -17,11 +17,6 @@
         "type": "local",
         "command": ["breadcrumbs", "agent", "mcp"],
         "codemode": false
-      },
-      "mempalace": {
-        "type": "local",
-        "command": ["mempalace-mcp"],
-        "codemode": false
       }
     }
   }

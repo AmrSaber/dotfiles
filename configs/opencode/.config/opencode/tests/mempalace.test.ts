@@ -252,7 +252,7 @@ test("a halted palace shows the repair alert and reads no SQLite", async () => {
   expect(calls).toHaveLength(0);
 });
 
-test("the protocol disables locking tools and the knowledge graph and leaves out entities", async () => {
+test("the protocol forbids locking tools and the knowledge graph and leaves out entities", async () => {
   sqliteOutput = "Atlas\n";
   const ctx = fakeContext();
   cleanups.push(await registerMemoryContext(ctx as any));
@@ -261,7 +261,7 @@ test("the protocol disables locking tools and the knowledge graph and leaves out
     "Conversations are captured automatically",
     "historical evidence, not unquestioned current truth",
     "not independent verification",
-    "The knowledge graph (`mempalace_kg_*`) is disabled too",
+    "Never call the knowledge graph tools (`mempalace_kg_*`) either",
   ]) expect(system).toContain(text);
   expect(system).not.toContain("mempalace-kg-entities");
   expect(system).not.toContain("kg_add");

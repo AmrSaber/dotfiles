@@ -31,7 +31,7 @@ afterEach(async () => {
   }
 });
 
-test("one plugin retains memory routing, tool filtering, capture hooks, and cleanup", async () => {
+test("one plugin retains memory routing, capture hooks, and cleanup", async () => {
   const fixture = context();
   cleanup = await plugin.setup(fixture.ctx as any) as () => Promise<void>;
   expect(plugin.id).toBe("mempalace");
@@ -45,24 +45,12 @@ test("one plugin retains memory routing, tool filtering, capture hooks, and clea
   expect(text).not.toContain("mempalace-kg-entities");
   expect(text).not.toMatch(/organic/i);
 
-  const tools = { list: () => [{ id: "mempalace_mempalace_kg_add" }, { id: "mempalace_mempalace_add_drawer" }, { id: "mempalace_mempalace_search" }], remove: (id: string) => fixture.removed.push(id) };
-  fixture.toolTransforms[0](tools);
-  expect(fixture.removed).toEqual(["mempalace_mempalace_kg_add", "mempalace_mempalace_add_drawer"]);
-
   await fixture.hooks.get("compaction")![0]({ sessionID: "fixture" });
   expect(fixture.contextReads).toBe(0);
   await cleanup();
   cleanup = undefined;
-  expect(fixture.disposals).toBe(3);
-  expect(fixture.signal?.aborted).toBe(true);
-});
-
-test("a failed tool registration cleans up memory hooks and capture subscription", async () => {
-  const fixture = context();
-  fixture.ctx.tool.transform = async () => { throw new Error("fixture tool failure"); };
-  await expect(plugin.setup(fixture.ctx)).rejects.toThrow("fixture tool failure");
-  expect(fixture.signal?.aborted).toBe(true);
   expect(fixture.disposals).toBe(2);
+  expect(fixture.signal?.aborted).toBe(true);
 });
 
 test("a failed compaction registration never starts a capture subscription", async () => {
@@ -81,8 +69,6 @@ function context() {
   const hooks = new Map<string, Array<(event: any) => Promise<void>>>();
   const fixture = {
     hooks,
-    removed: [] as string[],
-    toolTransforms: [] as Array<(tools: any) => void>,
     disposals: 0,
     contextReads: 0,
     signal: undefined as AbortSignal | undefined,
@@ -90,7 +76,6 @@ function context() {
   };
   const registration = () => ({ dispose: async () => { fixture.disposals++; } });
   fixture.ctx = {
-    tool: { transform: async (callback: any) => { fixture.toolTransforms.push(callback); return registration(); } },
     session: {
       hook: async (name: string, hook: any) => { hooks.set(name, [...(hooks.get(name) ?? []), hook]); return registration(); },
       context: async () => { fixture.contextReads++; return []; },
