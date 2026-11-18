@@ -41,10 +41,13 @@ async function renderFacts(): Promise<string> {
 
 export function renderCatalogue(root: string, facts: Fact[]): string {
   const lines = facts.length
-    ? facts.map(
-        ({ path, description }) =>
-          `- ${path} — ${description ?? "NO FRONT-MATTER DESCRIPTION: add one when you next touch this file"}`,
-      )
+    ? [
+        `Facts directory: ${root}`,
+        ...facts.map(
+          ({ path, description }) =>
+            `- ${path} — ${description ?? "NO FRONT-MATTER DESCRIPTION: add one when you next touch this file"}`,
+        ),
+      ]
     : [
         `No facts yet. The facts directory is ${root}.`,
         "Populate it as you learn things: user preferences, project knowledge, and answers you had to research or dig for.",
@@ -58,6 +61,7 @@ function instructions(): string {
     "Organic facts are Markdown files that hold knowledge you would otherwise have to rediscover: user preferences, project and tool knowledge, and findings from research or digging. Each entry in the `<organic-facts>` block is one file: its full path and a description of when it is relevant. Think of facts as factual skills that only contain information about certain topic.",
     "### Reading",
     "- When an entry might be relevant to what you are doing, read the file before you act or search elsewhere.",
+    "- The facts are plain Markdown files under the facts directory named in the block. You can use ordinary search (grep, ripgrep, glob, ...) there to find facts that descriptions don't point to, for example by keyword.",
     "- Treat each file as a nearly self-contained reference for one topic, fact, or group of facts. Common facts can live in their own files and be referenced from others.",
     "- If you had to search, ask the user, or dig for information that a fact file should have covered, the file is incomplete. Update it with the missing context.",
     "### Writing",

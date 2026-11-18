@@ -58,6 +58,7 @@ test("the catalogue lists full paths, flags missing descriptions, and shows a pl
     { path: "/facts/a.md", description: "When doing A." },
     { path: "/facts/b.md" },
   ]);
+  expect(text).toContain("Facts directory: /facts");
   expect(text).toContain("- /facts/a.md — When doing A.");
   expect(text).toMatch(/- \/facts\/b\.md — NO FRONT-MATTER DESCRIPTION/);
 
@@ -85,6 +86,7 @@ test("the context hook pushes instructions first and a fresh catalogue second", 
   expect(instructions).toContain("nearly self-contained");
   expect(instructions).toContain("Add a new file only when");
   expect(instructions).toContain("must not contain facts");
+  expect(instructions).toContain("ordinary search");
   expect(empty).toContain("No facts yet");
 
   await write(root, "Topic/fact.md", "---\ndescription: When topic matters.\n---\n");
