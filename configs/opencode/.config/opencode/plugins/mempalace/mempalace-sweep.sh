@@ -20,14 +20,33 @@ fi
 # A reboot/OOM/kill mid-flush strands rows in chroma's embeddings_queue, leaving
 # the vector segment far behind metadata; ChromaDB then DEADLOCKS reconciling the
 # backlog on first read, hanging every sweep ~90s. sqlite is the durable ground
-# truth, so rebuilding from it recovers with zero data loss. Chroma always has two
-# segments (metadata + vector) whose seq_id normally differ by a handful (benign
-# flush lag), so we rebuild only when the vector segment falls far enough behind to
-# mean a real stranded backlog. The check is safe here only because the lock
-# guarantees no concurrent mid-flush writer.
-gap=$(sqlite3 "$MP_CHROMA" "SELECT COALESCE(MAX(seq_id) - MIN(seq_id), 0) FROM max_seq_id;" 2>/dev/null)
-if [ "$gap" -gt 50 ] 2>/dev/null; then
+# truth, so rebuilding from it recovers with zero data loss. The check is safe
+# here only because the lock guarantees no concurrent mid-flush writer.
+#
+# The vector segment lags by design: collections use hnsw:sync_threshold=1000, so
+# it flushes every ~1000 writes. Compare metadata vs vector within each collection
+# (never across collections) and rebuild only above 3x that lag.
+# shortcut: a collection whose vector segment never flushed has no max_seq_id row
+# and is skipped by the join; upgrade if stranded backlogs there ever matter.
+gap=$(sqlite3 "$MP_CHROMA" "SELECT COALESCE(MAX(m.seq_id - v.seq_id), 0)
+  FROM segments ms
+  JOIN segments vs ON vs.collection = ms.collection AND vs.scope = 'VECTOR'
+  JOIN max_seq_id m ON m.segment_id = ms.id
+  JOIN max_seq_id v ON v.segment_id = vs.id
+  WHERE ms.scope = 'METADATA';" 2>/dev/null)
+# One rebuild per episode: a rebuild that doesn't clear the gap won't be repeated.
+rebuilt="$MP_LOG.rebuilt"
+if [ "$gap" -le 3000 ] 2>/dev/null; then
+  rm -f "$rebuilt"
+elif [ "$gap" -gt 3000 ] 2>/dev/null && [ -e "$rebuilt" ]; then
+  # Sweeping a still-stranded palace hangs ChromaDB, so halt like a failed rebuild.
+  echo "[$(date -Is)] self-heal: gap $gap persists after a rebuild; manual intervention required (see $MP_LOG)" >"$MP_ERROR_LOG"
+  tail -30 "$MP_LOG" >>"$MP_ERROR_LOG" 2>/dev/null
+  echo "[$(date -Is)] self-heal: gap $gap persists after a rebuild; wrote $MP_ERROR_LOG and halted sweeps" >>"$MP_LOG"
+  exit 0
+elif [ "$gap" -gt 3000 ] 2>/dev/null; then
   echo "[$(date -Is)] self-heal: segments diverged (gap $gap); rebuilding from sqlite" >>"$MP_LOG"
+  touch "$rebuilt"
 
   # --archive-existing is load-bearing, not a backup: repair reads sqlite FROM
   # the archive it renames aside. The archive is the newest palace.pre-rebuild-*.
