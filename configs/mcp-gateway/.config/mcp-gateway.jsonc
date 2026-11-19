@@ -35,6 +35,14 @@
       "server": {
         "command": ["terminal-driver-mcp"]
       }
+    },
+
+    // Memory
+    "mempalace": {
+      "description": "MemPalace memory palace: search past-session memories, browse wings/rooms/drawers, coordination events and artifacts. Read-only use only. NEVER call tools that take the palace lock (add/update/delete drawers, checkpoint, diary_write, mine, sync, tunnel/hallway writes) or mempalace_kg_*: they break concurrent capture.",
+      "server": {
+        "command": ["mempalace-mcp"]
+      }
     }
   }
 }
